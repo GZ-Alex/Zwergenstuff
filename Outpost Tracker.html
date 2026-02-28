@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Universe Dawn – Außenposten Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050a14;
+    --bg2: #08101e;
+    --bg3: #0d1a2d;
+    --border: #1a3050;
+    --accent: #00d4ff;
+    --accent2: #0077aa;
+    --text: #b0c8e0;
+    --text-bright: #e0f0ff;
+    --gray: #6a7a8a;
+    --rarity-gray: #aaaaaa;
+    --rarity-green: #44ff88;
+    --rarity-blue: #4488ff;
+    --rarity-purple: #bb55ff;
+    --rarity-gold: #ffcc00;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 15px;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 20% 10%, rgba(0,100,180,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 90%, rgba(0,60,120,0.06) 0%, transparent 50%);
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 30% 70%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 55% 25%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 75% 60%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 40%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 45% 85%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 65% 5%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 5% 50%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 22% 90%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 85% 20%, rgba(255,255,255,0.3) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* PASSWORD SCREEN */
+  #passwordScreen {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 999;
+  }
+  .pw-box {
+    background: var(--bg2); border: 1px solid var(--accent2); border-radius: 6px;
+    padding: 40px 44px; text-align: center; max-width: 360px; width: 90%;
+    box-shadow: 0 0 60px rgba(0,100,180,0.2); position: relative; z-index: 1;
+  }
+  .pw-box::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    border-radius: 6px 6px 0 0;
+  }
+  .pw-lock { font-size: 36px; margin-bottom: 20px; display: block; }
+  .pw-title { font-family: 'Orbitron', monospace; font-size: 13px; font-weight: 800; color: var(--text-bright); letter-spacing: 0.2em; margin-bottom: 6px; }
+  .pw-subtitle { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--gray); letter-spacing: 0.3em; margin-bottom: 28px; }
+  .pw-input {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 3px;
+    color: var(--text-bright); font-family: 'Share Tech Mono', monospace; font-size: 16px;
+    padding: 11px 14px; outline: none; text-align: center; letter-spacing: 0.15em;
+    margin-bottom: 14px; transition: border-color 0.2s;
+  }
+  .pw-input:focus { border-color: var(--accent2); }
+  .pw-input.shake { animation: shake 0.3s; border-color: #ff4466; }
+  .pw-error { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #ff4466; margin-bottom: 12px; min-height: 16px; letter-spacing: 0.1em; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+
+  /* MAIN APP */
+  #app { display: none; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 20px 16px; position: relative; z-index: 1; }
+  header { text-align: center; padding: 30px 0 24px; border-bottom: 1px solid var(--border); margin-bottom: 28px; position: relative; }
+  header::after { content: ''; position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%); width: 200px; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); }
+  h1 { font-family: 'Orbitron', monospace; font-size: clamp(18px, 4vw, 32px); font-weight: 800; color: var(--text-bright); letter-spacing: 0.12em; text-shadow: 0 0 20px rgba(0,212,255,0.4); }
+  h1 span { color: var(--accent); }
+  .subtitle { font-family: 'Share Tech Mono', monospace; color: var(--gray); font-size: 12px; letter-spacing: 0.3em; margin-top: 6px; }
+  .sync-indicator { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--gray); letter-spacing: 0.15em; margin-top: 6px; }
+  .sync-indicator.syncing { color: var(--accent); }
+  .sync-indicator.error { color: #ff4466; }
+  .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  @media (max-width: 650px) { .panels { grid-template-columns: 1fr; } }
+  .panel { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 18px 20px; position: relative; overflow: hidden; }
+  .panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent2), transparent); }
+  .panel-title { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 600; color: var(--accent); letter-spacing: 0.25em; text-transform: uppercase; margin-bottom: 14px; }
+  textarea { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 3px; color: var(--text-bright); font-family: 'Share Tech Mono', monospace; font-size: 13px; padding: 10px 12px; resize: vertical; min-height: 90px; transition: border-color 0.2s; outline: none; }
+  textarea:focus { border-color: var(--accent2); }
+  textarea::placeholder { color: var(--gray); font-size: 12px; }
+  .rarity-selector { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+  .rarity-btn { padding: 5px 12px; border-radius: 3px; border: 1px solid transparent; background: var(--bg3); cursor: pointer; font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 13px; transition: all 0.15s; letter-spacing: 0.05em; }
+  .rarity-btn[data-rarity="gray"]   { color: var(--rarity-gray);   border-color: #444; }
+  .rarity-btn[data-rarity="green"]  { color: var(--rarity-green);  border-color: #225533; }
+  .rarity-btn[data-rarity="blue"]   { color: var(--rarity-blue);   border-color: #224488; }
+  .rarity-btn[data-rarity="purple"] { color: var(--rarity-purple); border-color: #552288; }
+  .rarity-btn[data-rarity="gold"]   { color: var(--rarity-gold);   border-color: #775500; }
+  .rarity-btn.active[data-rarity="gray"]   { background: rgba(170,170,170,0.15); border-color: var(--rarity-gray); }
+  .rarity-btn.active[data-rarity="green"]  { background: rgba(68,255,136,0.12);  border-color: var(--rarity-green); }
+  .rarity-btn.active[data-rarity="blue"]   { background: rgba(68,136,255,0.12);  border-color: var(--rarity-blue); }
+  .rarity-btn.active[data-rarity="purple"] { background: rgba(187,85,255,0.12);  border-color: var(--rarity-purple); }
+  .rarity-btn.active[data-rarity="gold"]   { background: rgba(255,204,0,0.12);   border-color: var(--rarity-gold); box-shadow: 0 0 10px rgba(255,204,0,0.2); }
+  .date-row { display: flex; gap: 10px; align-items: center; margin-top: 12px; }
+  input[type="date"] { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 3px; color: var(--text-bright); font-family: 'Rajdhani', sans-serif; font-size: 14px; padding: 7px 10px; outline: none; transition: border-color 0.2s; }
+  input[type="date"]:focus { border-color: var(--accent2); }
+  .btn { background: linear-gradient(135deg, #005577, #003344); border: 1px solid var(--accent2); color: var(--accent); font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.15em; padding: 8px 18px; border-radius: 3px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+  .btn:hover { background: linear-gradient(135deg, #006688, #004455); box-shadow: 0 0 14px rgba(0,212,255,0.25); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-danger { background: linear-gradient(135deg, #440011, #220008); border-color: #882233; color: #ff4466; }
+  .btn-danger:hover { box-shadow: 0 0 14px rgba(255,50,80,0.25); }
+  .btn-warn { background: linear-gradient(135deg, #332200, #221500); border-color: #aa6600; color: #ffaa00; }
+  .btn-warn:hover { box-shadow: 0 0 14px rgba(255,170,0,0.25); }
+  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .filter-chip { padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg3); cursor: pointer; font-size: 12px; font-family: 'Rajdhani', sans-serif; font-weight: 500; color: var(--gray); transition: all 0.15s; letter-spacing: 0.05em; }
+  .filter-chip.active { border-color: var(--accent2); color: var(--accent); background: rgba(0,120,170,0.1); }
+  .outpost-table { width: 100%; border-collapse: collapse; }
+  .outpost-table th { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.2em; color: var(--gray); text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .outpost-table td { padding: 10px 10px; border-bottom: 1px solid rgba(26,48,80,0.5); font-size: 14px; vertical-align: middle; }
+  .outpost-row { transition: background 0.15s; }
+  .outpost-row:hover { background: rgba(0,50,80,0.3); }
+  .player-name { font-weight: 600; color: var(--text-bright); font-size: 14px; }
+  .alliance-tag { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--gray); }
+  .coords { font-family: 'Share Tech Mono', monospace; font-size: 13px; font-weight: 700; padding: 3px 8px; border-radius: 3px; border: 1px solid; display: inline-block; white-space: nowrap; }
+  .coords.gray   { color: var(--rarity-gray);   border-color: #444;    background: rgba(170,170,170,0.08); }
+  .coords.green  { color: var(--rarity-green);  border-color: #225533; background: rgba(68,255,136,0.08); }
+  .coords.blue   { color: var(--rarity-blue);   border-color: #224488; background: rgba(68,136,255,0.08); }
+  .coords.purple { color: var(--rarity-purple); border-color: #552288; background: rgba(187,85,255,0.08); }
+  .coords.gold   { color: var(--rarity-gold);   border-color: #775500; background: rgba(255,204,0,0.08); box-shadow: 0 0 8px rgba(255,204,0,0.15); }
+  .rarity-badge { font-size: 11px; font-weight: 600; font-family: 'Share Tech Mono', monospace; }
+  .rarity-badge.gray   { color: var(--rarity-gray); }
+  .rarity-badge.green  { color: var(--rarity-green); }
+  .rarity-badge.blue   { color: var(--rarity-blue); }
+  .rarity-badge.purple { color: var(--rarity-purple); }
+  .rarity-badge.gold   { color: var(--rarity-gold); }
+  .date-cell { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--gray); }
+  .cb-group { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .cb-label { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 12px; font-family: 'Rajdhani', sans-serif; font-weight: 500; white-space: nowrap; user-select: none; }
+  .cb-label input[type="checkbox"] { width: 14px; height: 14px; cursor: pointer; }
+  .cb-label.destroyed { color: #ff4466; }
+  .cb-label.destroyed input { accent-color: #ff4466; }
+  .cb-label.gone { color: var(--gray); }
+  .cb-label.ontheway { color: #ffaa00; }
+  .cb-label.ontheway input { accent-color: #ffaa00; }
+  .ontheway-info { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #ffaa00; background: rgba(255,170,0,0.08); border: 1px solid #664400; padding: 2px 7px; border-radius: 3px; margin-top: 5px; display: inline-block; }
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--gray); font-family: 'Share Tech Mono', monospace; font-size: 13px; letter-spacing: 0.1em; }
+  .ranking-list { list-style: none; }
+  .ranking-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(26,48,80,0.4); }
+  .rank-num { font-family: 'Orbitron', monospace; font-size: 16px; font-weight: 800; width: 28px; text-align: center; color: var(--gray); }
+  .rank-num.top1 { color: var(--rarity-gold); text-shadow: 0 0 10px rgba(255,204,0,0.4); }
+  .rank-num.top2 { color: #ccc; }
+  .rank-num.top3 { color: #cc7733; }
+  .rank-name { flex: 1; font-weight: 600; font-size: 15px; color: var(--text-bright); }
+  .rank-kills { font-family: 'Share Tech Mono', monospace; font-size: 13px; color: #ff6688; background: rgba(255,50,80,0.08); border: 1px solid #441122; padding: 2px 8px; border-radius: 3px; }
+  .counter-bar { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .counter { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 10px 16px; display: flex; align-items: center; gap: 10px; flex: 1; min-width: 100px; }
+  .counter-num { font-family: 'Orbitron', monospace; font-size: 22px; font-weight: 800; color: var(--accent); line-height: 1; }
+  .counter-label { font-size: 11px; color: var(--gray); letter-spacing: 0.1em; line-height: 1.4; text-transform: uppercase; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,5,15,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(4px); }
+  .modal { background: var(--bg2); border: 1px solid var(--accent2); border-radius: 6px; padding: 28px 32px; min-width: 300px; max-width: 400px; box-shadow: 0 0 40px rgba(0,100,180,0.3); text-align: center; }
+  .modal h3 { font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 600; color: var(--accent); letter-spacing: 0.15em; margin-bottom: 16px; }
+  .modal p { color: var(--text); margin-bottom: 16px; font-size: 14px; }
+  .modal input[type="text"] { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 3px; color: var(--text-bright); font-family: 'Rajdhani', sans-serif; font-size: 15px; padding: 9px 12px; outline: none; margin-bottom: 16px; transition: border-color 0.2s; }
+  .modal input[type="text"]:focus { border-color: var(--accent2); }
+  .modal-btns { display: flex; gap: 10px; justify-content: center; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: #003344; border: 1px solid var(--accent); color: var(--accent); font-family: 'Share Tech Mono', monospace; font-size: 13px; padding: 10px 24px; border-radius: 4px; opacity: 0; transition: all 0.3s; z-index: 200; white-space: nowrap; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- PASSWORD SCREEN -->
+<div id="passwordScreen">
+  <div class="pw-box">
+    <span class="pw-lock">🔒</span>
+    <div class="pw-title">UNIVERSE DAWN</div>
+    <div class="pw-subtitle">OUTPOST INTELLIGENCE DATABASE</div>
+    <input class="pw-input" type="password" id="pwInput" placeholder="Passwort eingeben..." autocomplete="off">
+    <div class="pw-error" id="pwError">&nbsp;</div>
+    <button class="btn" style="width:100%; font-size:12px;" onclick="checkPassword()">ZUGANG ANFORDERN</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+<div class="container">
+  <header>
+    <h1>UNIVERSE DAWN &nbsp;·&nbsp; <span>AUSSENPOSTEN</span> TRACKER</h1>
+    <div class="subtitle">OUTPOST INTELLIGENCE DATABASE</div>
+    <div class="sync-indicator" id="syncIndicator">● VERBINDE MIT DATENBANK...</div>
+  </header>
+
+  <div class="counter-bar" id="counters"></div>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-title">⊕ Neuen Scan erfassen</div>
+      <textarea id="scanInput" placeholder="Scan einfügen:&#10;Heiliger Geist&#10;~s7z~&#10;233-231-60"></textarea>
+      <div style="margin-top:12px; margin-bottom:4px; font-size:12px; color:var(--gray); letter-spacing:0.1em;">RARITÄT</div>
+      <div class="rarity-selector">
+        <button class="rarity-btn" data-rarity="gray">⬡ Grau</button>
+        <button class="rarity-btn" data-rarity="green">⬡ Grün</button>
+        <button class="rarity-btn active" data-rarity="blue">⬡ Blau</button>
+        <button class="rarity-btn" data-rarity="purple">⬡ Lila</button>
+        <button class="rarity-btn" data-rarity="gold">★ Gold</button>
+      </div>
+      <div class="date-row">
+        <input type="date" id="scanDate">
+        <button class="btn" id="addBtn" onclick="addOutpost()">HINZUFÜGEN</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">🏆 Zerstörer-Ranking</div>
+      <ul class="ranking-list" id="rankingList">
+        <li style="text-align:center; padding:20px; color:var(--gray); font-family:'Share Tech Mono'; font-size:12px;">LADE DATEN...</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-bottom:20px;">
+    <div class="panel-title" style="margin-bottom:10px;">📡 Aktive Außenposten</div>
+    <div class="filter-row" id="filterRow"></div>
+    <div style="overflow-x:auto;">
+      <table class="outpost-table">
+        <thead>
+          <tr>
+            <th>SPIELER</th>
+            <th>KOORDINATEN</th>
+            <th>RARITÄT</th>
+            <th>DATUM</th>
+            <th>AKTIONEN</th>
+          </tr>
+        </thead>
+        <tbody id="outpostTableBody"></tbody>
+      </table>
+    </div>
+    <div id="emptyState" class="empty-state" style="display:none;">[ KEINE AUSSENPOSTEN ERFASST ]</div>
+  </div>
+</div>
+</div>
+
+<!-- MODAL: Zerstört -->
+<div class="modal-overlay" id="modalDestroy" style="display:none;">
+  <div class="modal">
+    <h3>⚔ OUTPOST ZERSTÖRT</h3>
+    <p>Gib deinen Spielernamen ein:</p>
+    <input type="text" id="destroyerInput" placeholder="Dein Spielername...">
+    <div class="modal-btns">
+      <button class="btn btn-danger" onclick="confirmDestroy()">BESTÄTIGEN</button>
+      <button class="btn" onclick="closeModal('modalDestroy')">ABBRECHEN</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Unterwegs -->
+<div class="modal-overlay" id="modalOnTheWay" style="display:none;">
+  <div class="modal">
+    <h3>🚀 UNTERWEGS</h3>
+    <p>Gib deinen Spielernamen ein:</p>
+    <input type="text" id="onTheWayInput" placeholder="Dein Spielername...">
+    <div class="modal-btns">
+      <button class="btn btn-warn" onclick="confirmOnTheWay()">BESTÄTIGEN</button>
+      <button class="btn" onclick="closeModal('modalOnTheWay')">ABBRECHEN</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── PASSWORD ──
+  const PASSWORD = 'Zwerge2026';
+
+  function checkPassword() {
+    const val = document.getElementById('pwInput').value;
+    if (val === PASSWORD) {
+      document.getElementById('passwordScreen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      loadData();
+    } else {
+      const inp = document.getElementById('pwInput');
+      const err = document.getElementById('pwError');
+      inp.classList.add('shake');
+      err.textContent = '[ ZUGANG VERWEIGERT ]';
+      setTimeout(() => { inp.classList.remove('shake'); inp.value = ''; inp.focus(); }, 500);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('pwInput').focus();
+    document.getElementById('pwInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') checkPassword();
+    });
+  });
+
+  // ── SUPABASE ──
+  const SUPABASE_URL = 'https://dcwtykbujgilyluvyjal.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_UrMDrWlA1E7gJSY7by3qRw_8mNZXht-';
+  const headers = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+  };
+
+  async function dbGet(table, params = '') {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  }
+  async function dbInsert(table, data) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method: 'POST', headers, body: JSON.stringify(data) });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  }
+  async function dbUpdate(table, match, data) {
+    const params = Object.entries(match).map(([k,v]) => `${k}=eq.${encodeURIComponent(v)}`).join('&');
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { method: 'PATCH', headers, body: JSON.stringify(data) });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  }
+  async function dbUpsert(table, data) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+      method: 'POST',
+      headers: { ...headers, 'Prefer': 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  }
+
+  // ── STATE ──
+  let outposts = [];
+  let ranking  = [];
+  let selectedRarity  = 'blue';
+  let activeFilter    = 'all';
+  let pendingDestroyId   = null;
+  let pendingOnTheWayId  = null;
+  const rarityLabels = { gray:'Grau', green:'Grün', blue:'Blau', purple:'Lila', gold:'Gold' };
+
+  function setSyncStatus(cls, msg) {
+    const el = document.getElementById('syncIndicator');
+    el.className = 'sync-indicator ' + cls;
+    el.textContent = msg;
+  }
+
+  async function loadData() {
+    setSyncStatus('syncing', '● SYNCHRONISIERE...');
+    try {
+      outposts = await dbGet('outposts', 'order=id.desc');
+      ranking  = await dbGet('ranking',  'order=kills.desc');
+      setSyncStatus('', '● VERBUNDEN');
+      render();
+    } catch(e) {
+      setSyncStatus('error', '● VERBINDUNGSFEHLER');
+      showToast('❌ Datenbankfehler: ' + e.message);
+    }
+  }
+
+  // ── ADD ──
+  async function addOutpost() {
+    const raw  = document.getElementById('scanInput').value;
+    const date = document.getElementById('scanDate').value;
+    const parsed = parseScan(raw);
+    if (!parsed) { showToast('❌ Scan konnte nicht geparst werden.'); return; }
+    if (!date)   { showToast('❌ Bitte ein Datum auswählen.'); return; }
+    if (outposts.find(o => o.coords === parsed.coords && o.status === 'active')) {
+      showToast('⚠ Dieser Außenposten ist bereits aktiv.'); return;
+    }
+    const op = {
+      id: Date.now().toString(),
+      name: parsed.name, alliance: parsed.alliance, coords: parsed.coords,
+      rarity: selectedRarity, date, status: 'active',
+      destroyed_by: null, on_the_way_by: null, on_the_way_at: null
+    };
+    document.getElementById('addBtn').disabled = true;
+    setSyncStatus('syncing', '● SPEICHERE...');
+    try {
+      await dbInsert('outposts', op);
+      document.getElementById('scanInput').value = '';
+      showToast('✓ Außenposten erfasst: ' + parsed.coords);
+      await loadData();
+    } catch(e) {
+      showToast('❌ Fehler: ' + e.message);
+      setSyncStatus('error', '● FEHLER');
+    }
+    document.getElementById('addBtn').disabled = false;
+  }
+
+  // ── DESTROY ──
+  function markDestroyed(id) {
+    pendingDestroyId = id;
+    document.getElementById('destroyerInput').value = '';
+    document.getElementById('modalDestroy').style.display = 'flex';
+    setTimeout(() => document.getElementById('destroyerInput').focus(), 50);
+  }
+  async function confirmDestroy() {
+    const name = document.getElementById('destroyerInput').value.trim();
+    if (!name) { showToast('❌ Bitte einen Namen eingeben.'); return; }
+    setSyncStatus('syncing', '● SPEICHERE...');
+    try {
+      await dbUpdate('outposts', { id: pendingDestroyId }, { status: 'destroyed', destroyed_by: name });
+      const existing = ranking.find(r => r.player_name === name);
+      await dbUpsert('ranking', { player_name: name, kills: (existing ? existing.kills : 0) + 1 });
+      closeModal('modalDestroy');
+      showToast('⚔ Zerstört von: ' + name);
+      await loadData();
+    } catch(e) {
+      showToast('❌ Fehler: ' + e.message);
+      setSyncStatus('error', '● FEHLER');
+    }
+  }
+
+  // ── GONE ──
+  async function markGone(id) {
+    setSyncStatus('syncing', '● SPEICHERE...');
+    try {
+      await dbUpdate('outposts', { id }, { status: 'gone' });
+      showToast('👻 Außenposten als verschwunden markiert.');
+      await loadData();
+    } catch(e) {
+      showToast('❌ Fehler: ' + e.message);
+      setSyncStatus('error', '● FEHLER');
+    }
+  }
+
+  // ── ON THE WAY ──
+  function handleOnTheWayChange(cb, id, alreadySet) {
+    cb.checked = false;
+    if (alreadySet) {
+      cancelOnTheWay(id);
+    } else {
+      pendingOnTheWayId = id;
+      document.getElementById('onTheWayInput').value = '';
+      document.getElementById('modalOnTheWay').style.display = 'flex';
+      setTimeout(() => document.getElementById('onTheWayInput').focus(), 50);
+    }
+  }
+  async function confirmOnTheWay() {
+    const name = document.getElementById('onTheWayInput').value.trim();
+    if (!name) { showToast('❌ Bitte einen Namen eingeben.'); return; }
+    setSyncStatus('syncing', '● SPEICHERE...');
+    try {
+      const now = new Date().toISOString();
+      await dbUpdate('outposts', { id: pendingOnTheWayId }, { on_the_way_by: name, on_the_way_at: now });
+      closeModal('modalOnTheWay');
+      showToast('🚀 ' + name + ' ist unterwegs!');
+      await loadData();
+    } catch(e) {
+      showToast('❌ Fehler: ' + e.message);
+      setSyncStatus('error', '● FEHLER');
+    }
+  }
+  async function cancelOnTheWay(id) {
+    setSyncStatus('syncing', '● SPEICHERE...');
+    try {
+      await dbUpdate('outposts', { id }, { on_the_way_by: null, on_the_way_at: null });
+      showToast('↩ Unterwegs-Status entfernt.');
+      await loadData();
+    } catch(e) {
+      showToast('❌ Fehler: ' + e.message);
+    }
+  }
+
+  // ── MODAL ──
+  function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+    pendingDestroyId = null;
+    pendingOnTheWayId = null;
+  }
+
+  // ── RENDER ──
+  function render() {
+    renderCounters();
+    renderFilters();
+    renderTable();
+    renderRanking();
+  }
+
+  function renderCounters() {
+    const active    = outposts.filter(o => o.status === 'active').length;
+    const destroyed = outposts.filter(o => o.status === 'destroyed').length;
+    document.getElementById('counters').innerHTML = `
+      <div class="counter"><div class="counter-num">${active}</div><div class="counter-label">Aktive<br>Außenposten</div></div>
+      <div class="counter"><div class="counter-num" style="color:#ff4466">${destroyed}</div><div class="counter-label">Zerstörte<br>Außenposten</div></div>
+      <div class="counter"><div class="counter-num" style="color:var(--gray)">${outposts.length}</div><div class="counter-label">Insgesamt<br>Erfasst</div></div>
+    `;
+  }
+
+  function renderFilters() {
+    const rarities = ['all', ...Object.keys(rarityLabels)];
+    document.getElementById('filterRow').innerHTML = rarities.map(r => {
+      const label = r === 'all' ? 'Alle' : rarityLabels[r];
+      return `<div class="filter-chip ${activeFilter===r?'active':''}" onclick="setFilter('${r}')">${label}</div>`;
+    }).join('');
+  }
+
+  function setFilter(r) { activeFilter = r; render(); }
+
+  function renderTable() {
+    const active = outposts.filter(o => {
+      if (o.status !== 'active') return false;
+      if (activeFilter !== 'all' && o.rarity !== activeFilter) return false;
+      return true;
+    });
+    const tbody = document.getElementById('outpostTableBody');
+    const empty = document.getElementById('emptyState');
+    if (active.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+    tbody.innerHTML = active.map(op => {
+      const otw     = op.on_the_way_by;
+      const otwDate = op.on_the_way_at ? op.on_the_way_at.split('T')[0] : '';
+      return `
+        <tr class="outpost-row">
+          <td>
+            <div class="player-name">${escHtml(op.name)}</div>
+            <div class="alliance-tag">${escHtml(op.alliance)}</div>
+          </td>
+          <td><span class="coords ${op.rarity}">${escHtml(op.coords)}</span></td>
+          <td><span class="rarity-badge ${op.rarity}">${rarityLabels[op.rarity]||op.rarity}</span></td>
+          <td><span class="date-cell">${formatDate(op.date)}</span></td>
+          <td>
+            <div class="cb-group">
+              <label class="cb-label destroyed">
+                <input type="checkbox" onchange="if(this.checked){this.checked=false;markDestroyed('${op.id}');}">
+                Zerstört
+              </label>
+              <label class="cb-label gone">
+                <input type="checkbox" onchange="if(this.checked){this.checked=false;markGone('${op.id}');}">
+                Verschwunden
+              </label>
+              <label class="cb-label ontheway">
+                <input type="checkbox" ${otw?'checked':''} onchange="handleOnTheWayChange(this,'${op.id}',${otw?'true':'false'});">
+                Unterwegs
+              </label>
+            </div>
+            ${otw ? `<div class="ontheway-info">🚀 ${escHtml(otw)} · ${formatDate(otwDate)}</div>` : ''}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function renderRanking() {
+    const el = document.getElementById('rankingList');
+    if (!ranking.length) {
+      el.innerHTML = '<li style="text-align:center;padding:20px;color:var(--gray);font-family:\'Share Tech Mono\';font-size:12px;">KEINE DATEN</li>';
+      return;
+    }
+    el.innerHTML = ranking.map((r,i) => {
+      const cls   = i===0?'top1':i===1?'top2':i===2?'top3':'';
+      const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
+      return `
+        <li class="ranking-item">
+          <div class="rank-num ${cls}">${medal}</div>
+          <div class="rank-name">${escHtml(r.player_name)}</div>
+          <div class="rank-kills">${r.kills} KILLS</div>
+        </li>
+      `;
+    }).join('');
+  }
+
+  // ── HELPERS ──
+  function parseScan(raw) {
+    const lines = raw.trim().split('\n').map(l=>l.trim()).filter(Boolean);
+    if (lines.length < 2) return null;
+    let coords=null, name=null, alliance='–';
+    for (let l of lines) {
+      if (/^\d+[-]\d+[-]\d+$/.test(l)) { coords=l; continue; }
+      if (/^~.+~$/.test(l))            { alliance=l; continue; }
+      if (!name) name=l;
+    }
+    if (!coords||!name) return null;
+    return { name, alliance, coords };
+  }
+
+  function formatDate(d) {
+    if (!d) return '–';
+    const p = d.split('-');
+    if (p.length!==3) return d;
+    return `${p[2]}.${p[1]}.${p[0]}`;
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 3000);
+  }
+
+  // ── INIT ──
+  document.querySelectorAll('.rarity-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.rarity-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedRarity = btn.dataset.rarity;
+    });
+  });
+
+  document.getElementById('scanDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('destroyerInput').addEventListener('keydown', e=>{ if(e.key==='Enter') confirmDestroy(); });
+  document.getElementById('onTheWayInput').addEventListener('keydown',  e=>{ if(e.key==='Enter') confirmOnTheWay(); });
+
+  ['modalDestroy','modalOnTheWay'].forEach(id => {
+    document.getElementById(id).addEventListener('click', e => {
+      if (e.target===document.getElementById(id)) closeModal(id);
+    });
+  });
+
+  // Auto-refresh alle 30 Sekunden
+  setInterval(()=>{ if(document.getElementById('app').style.display!=='none') loadData(); }, 30000);
+</script>
+</body>
+</html>
