@@ -275,53 +275,93 @@
       </div>
     </div>
 
-    <!-- TEILE / BONI EINFÜGEN -->
-    <div class="panel">
-      <h2>🔩 Teile / Boni einfügen</h2>
-      <div class="info-box" style="margin-bottom:12px;">
-        <strong>Einfach aus dem Spiel kopieren und einfügen.</strong> Der Parser erkennt automatisch ob es sich um ein Modul oder einen Bonus handelt:<br>
-        Module: <code style="color:var(--accent)">Folgende Module…</code> gefolgt von <code style="color:var(--accent)">Name Tech Level X</code><br>
-        Boni: <code style="color:var(--accent)">* Bonustext…</code><br>
-        Mehrere Einträge auf einmal möglich. Der Typ (Chassis, Antrieb, etc.) kann danach in der Liste gesetzt werden.
+    <!-- TEILE / BONI EINFÜGEN — two columns side by side -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+      <!-- LEFT: Teile einzeln einfügen -->
+      <div class="panel" style="margin-bottom:0;">
+        <h2>🔩 Teile einzeln einfügen</h2>
+        <div class="info-box" style="margin-bottom:10px;font-size:0.78rem;">
+          Kompletten "Folgende Module"-Block einkopieren. Mehrere Teile auf einmal möglich. Typ danach in der Liste setzen.
+        </div>
+        <textarea id="mod-paste-text" style="height:120px;font-size:0.78rem;" placeholder="Folgende Module wurden durch dieses Technologielevel bereits freigeschalten:
+GMT1 LIGHT
+GMT1 LIGHT
+Technik Level 1
+Transporter Class I
+Transporter Class I
+Technik Level 12"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="btn" onclick="parseAndAddModules()">▶ Hinzufügen</button>
+          <button class="btn" onclick="document.getElementById('mod-paste-text').value=''">Leeren</button>
+        </div>
+        <div class="status-msg" id="mod-status"></div>
       </div>
-      <textarea id="mod-paste-text" style="height:140px;" placeholder="Folgende Module wurden durch dieses Technologielevel bereits freigeschalten:
-Nemesis Cruiser Seelenverbindung Level 9
 
-Folgende Module wurden durch dieses Technologielevel bereits freigeschalten:
-WINCOM Laserkanone Psychologie Level 1
-
-* Erhöht Zielen von Schiffen um 7.5 % pro Level dieser Technologie"></textarea>
-      <div style="display:flex;gap:10px;margin-top:10px;align-items:center;flex-wrap:wrap;">
-        <button class="btn" onclick="parseAndAddModules()">▶ Analysieren &amp; Hinzufügen</button>
-        <button class="btn" onclick="document.getElementById('mod-paste-text').value=''">Leeren</button>
-      </div>
-      <div class="status-msg" id="mod-status"></div>
-
-      <!-- Existing list -->
-      <div style="margin-top:22px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
-          <span style="font-family:'Orbitron',monospace;font-size:0.65rem;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;">Eingetragene Teile & Boni</span>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <select id="mod-filter-type" style="padding:4px 8px;font-size:0.75rem;width:auto;" onchange="renderModList()">
-              <option value="">Alle Typen</option>
-              <option value="chassi">Chassi</option>
-              <option value="p-waffe">P-Waffe</option>
-              <option value="s-waffe">S-Waffe</option>
-              <option value="schild">Schild</option>
-              <option value="panzerung">Panzerung</option>
-              <option value="antrieb">Antrieb</option>
-              <option value="ausruestung">Ausrüstung</option>
-              <option value="spezial">Spezial</option>
-              <option value="d-turm">D-Turm</option>
-              <option value="bonus">Bonus</option>
-            </select>
-            <input type="text" id="mod-filter-search" placeholder="Suchen…" style="padding:4px 8px;font-size:0.75rem;width:150px;" oninput="renderModList()">
+      <!-- RIGHT: Boni einzeln einfügen -->
+      <div class="panel" style="margin-bottom:0;">
+        <h2>⚡ Boni einzeln einfügen</h2>
+        <div class="info-box" style="margin-bottom:10px;font-size:0.78rem;">
+          Bonus-Text einfügen, Tech angeben und optional maximales Level setzen. Wird beim Techtree-Import als Bonus erkannt.
+        </div>
+        <div class="form-group" style="margin-bottom:8px;">
+          <label>Bonus-Text *</label>
+          <textarea id="bon-text" style="height:60px;font-size:0.78rem;" placeholder="Erhöht Zielen von Schiffen um 7.5 % pro Level dieser Technologie"></textarea>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div class="form-group">
+            <label>Tech *</label>
+            <input type="text" id="bon-tech" placeholder="z.B. Zarathustra" list="tech-list-bon">
+            <datalist id="tech-list-bon"></datalist>
+          </div>
+          <div class="form-group">
+            <label>Max. Level (optional)</label>
+            <input type="text" id="bon-maxlevel" placeholder="z.B. 10">
           </div>
         </div>
-        <table class="mod-table">
-          <thead><tr><th>Typ</th><th>Name</th><th>Tech</th><th>Level</th><th></th></tr></thead>
-          <tbody id="mod-list-body"><tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:20px;">Lade…</td></tr></tbody>
-        </table>
+        <button class="btn" onclick="addBonus()">➕ Bonus hinzufügen</button>
+        <div class="status-msg" id="bon-status"></div>
+      </div>
+    </div>
+
+    <!-- LIST: Two-column display of modules and bonuses -->
+    <div class="panel" style="margin-top:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <span style="font-family:'Orbitron',monospace;font-size:0.68rem;color:var(--accent);letter-spacing:2px;text-transform:uppercase;">Eingetragene Teile & Boni</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <select id="mod-filter-type" style="padding:4px 8px;font-size:0.75rem;width:auto;" onchange="renderModList()">
+            <option value="">Alle Typen</option>
+            <option value="unbestimmt">❓ Unbestimmt</option>
+            <option value="antrieb">⚛ Antrieb</option>
+            <option value="ausruestung">📦 Ausrüstung</option>
+            <option value="chassi">🛸 Chassi</option>
+            <option value="d-turm">🗼 D-Turm</option>
+            <option value="panzerung">🛡 Panzerung</option>
+            <option value="p-waffe">🔋 P-Waffe</option>
+            <option value="s-waffe">🎯 S-Waffe</option>
+            <option value="schild">🔵 Schild</option>
+            <option value="spezial">🔮 Spezial</option>
+            <option value="bonus">📈 Bonus</option>
+          </select>
+          <input type="text" id="mod-filter-search" placeholder="Suchen…" style="padding:4px 8px;font-size:0.75rem;width:140px;" oninput="renderModList()">
+        </div>
+      </div>
+      <!-- Two side-by-side tables -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <div style="font-family:'Orbitron',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Bauteile</div>
+          <table class="mod-table">
+            <thead><tr><th>Typ</th><th>Name</th><th>Tech</th><th>Lv.</th><th></th></tr></thead>
+            <tbody id="mod-list-body"><tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:14px;">Lade…</td></tr></tbody>
+          </table>
+        </div>
+        <div>
+          <div style="font-family:'Orbitron',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Boni</div>
+          <table class="mod-table">
+            <thead><tr><th>Bonus-Text</th><th>Tech</th><th>Max.Lv.</th><th></th></tr></thead>
+            <tbody id="bon-list-body"><tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:14px;">Lade…</td></tr></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -382,15 +422,16 @@ WINCOM Laserkanone Psychologie Level 1
     <div id="edit-type-row" style="margin-bottom:14px;">
       <label style="font-family:'Orbitron',monospace;font-size:0.58rem;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:5px;">Typ</label>
       <select id="edit-type-select" style="background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Exo 2',sans-serif;font-size:0.88rem;padding:7px 12px;width:100%;">
-        <option value="chassi">🚀 Chassi</option>
-        <option value="p-waffe">🔫 P-Waffe</option>
-        <option value="s-waffe">⚔ S-Waffe</option>
-        <option value="schild">🔵 Schild</option>
-        <option value="panzerung">🛡 Panzerung</option>
-        <option value="antrieb">🔥 Antrieb</option>
-        <option value="ausruestung">🎒 Ausrüstung</option>
-        <option value="spezial">✨ Spezial</option>
+        <option value="unbestimmt">❓ Unbestimmt</option>
+        <option value="antrieb">⚛ Antrieb</option>
+        <option value="ausruestung">📦 Ausrüstung</option>
+        <option value="chassi">🛸 Chassi</option>
         <option value="d-turm">🗼 D-Turm</option>
+        <option value="panzerung">🛡 Panzerung</option>
+        <option value="p-waffe">🔋 P-Waffe</option>
+        <option value="s-waffe">🎯 S-Waffe</option>
+        <option value="schild">🔵 Schild</option>
+        <option value="spezial">🔮 Spezial</option>
       </select>
     </div>
     <div id="edit-name-wrap" class="form-group" style="margin-bottom:14px;">
@@ -401,9 +442,15 @@ WINCOM Laserkanone Psychologie Level 1
       <div class="form-group"><label>Tech</label><input type="text" id="edit-tech"><datalist id="tech-list-edit"></datalist></div>
       <div id="edit-level-wrap" class="form-group"><label>Level</label><input type="text" id="edit-level"></div>
     </div>
-    <div class="form-group" id="edit-bonus-wrap" style="margin-bottom:14px;display:none;">
-      <label>Bonus-Text</label>
-      <input type="text" id="edit-bonus-text" style="width:100%;">
+    <div id="edit-bonus-wrap" style="display:none;">
+      <div class="form-group" style="margin-bottom:10px;">
+        <label>Bonus-Text</label>
+        <textarea id="edit-bonus-text" style="height:60px;"></textarea>
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>Max. Level (optional)</label>
+        <input type="text" id="edit-bon-maxlevel" placeholder="z.B. 10">
+      </div>
     </div>
     <div class="modal-actions">
       <button class="btn btn-danger" onclick="deleteModEntry()">🗑 Löschen</button>
@@ -439,8 +486,11 @@ CREATE TABLE IF NOT EXISTS tech_modules (
 CREATE TABLE IF NOT EXISTS tech_bonuses (
   id BIGSERIAL PRIMARY KEY,
   tech_name TEXT NOT NULL REFERENCES technologies(name) ON DELETE CASCADE,
-  bonus_text TEXT NOT NULL
+  bonus_text TEXT NOT NULL,
+  max_level INTEGER
 );
+-- Add max_level if table already exists:
+ALTER TABLE tech_bonuses ADD COLUMN IF NOT EXISTS max_level INTEGER;
 
 -- Falls tech_modules bereits existiert, Spalte ergänzen:
 ALTER TABLE tech_modules ADD COLUMN IF NOT EXISTS module_type TEXT DEFAULT 'bauteil';
@@ -476,9 +526,10 @@ const RASSEN = new Set(['mensch','magumer','wegoner','jamozoid','morricaner','mo
 const CLASS_COLORS = { warlord:'#ff4444', trader:'#44ff88', freelancer:'#4488ff' };
 const NODE_COLOR = '#00d4ff'; // all branch nodes same
 const BRANCHES = ['psychologie','informatik','politik','naturkunde','historik','mathematik','technik'];
-const TYPE_ICONS  = { 'chassi':'🚀','p-waffe':'🔫','s-waffe':'⚔','schild':'🔵','panzerung':'🛡','antrieb':'🔥','ausruestung':'🎒','spezial':'✨','d-turm':'🗼','bonus':'⚡' };
-const TYPE_LABELS = { 'chassi':'Chassi','p-waffe':'P-Waffe','s-waffe':'S-Waffe','schild':'Schild','panzerung':'Panzerung','antrieb':'Antrieb','ausruestung':'Ausrüstung','spezial':'Spezial','d-turm':'D-Turm','bonus':'Bonus' };
-const MOD_TYPES   = ['chassi','p-waffe','s-waffe','schild','panzerung','antrieb','ausruestung','spezial','d-turm'];
+const TYPE_ICONS  = { 'chassi':'🛸','p-waffe':'🔋','s-waffe':'🎯','schild':'🔵','panzerung':'🛡','antrieb':'⚛','ausruestung':'📦','spezial':'🔮','d-turm':'🗼','bonus':'📈','unbestimmt':'❓' };
+const TYPE_LABELS = { 'chassi':'Chassi','p-waffe':'P-Waffe','s-waffe':'S-Waffe','schild':'Schild','panzerung':'Panzerung','antrieb':'Antrieb','ausruestung':'Ausrüstung','spezial':'Spezial','d-turm':'D-Turm','bonus':'Bonus','unbestimmt':'Unbestimmt' };
+// Sorted alphabetically for dropdown (Unbestimmt always first)
+const MOD_TYPES   = ['unbestimmt','antrieb','ausruestung','chassi','d-turm','panzerung','p-waffe','s-waffe','schild','spezial'];
 
 // ── STATE ──
 let allTechs=[], allModules=[], allBonuses=[];
@@ -699,7 +750,7 @@ function buildNode(node, ancestorIsLast, matchSet) {
       bl.appendChild(l);
       mods.forEach(m=>{
         const typeIcon=TYPE_ICONS[m.module_type]||'⚙';
-        const typeClass=`type-icon-${m.module_type||'bauteil'}`;
+        const typeClass=`type-icon-${m.module_type||'unbestimmt'}`;
         const i=document.createElement('div'); i.className='mod-item';
         i.innerHTML=`<span class="${typeClass}">${typeIcon}</span><span class="mod-name">${m.module_name}</span><span class="mod-lvl">Level ${m.unlock_level}</span>`;
         bl.appendChild(i);
@@ -726,14 +777,39 @@ function buildNode(node, ancestorIsLast, matchSet) {
   return wrapper;
 }
 
-// ── POPULATE TECH DATALIST (for edit modal) ──
+// ── POPULATE TECH DATALISTS ──
 async function populateTechDatalist() {
   try {
     const techs=await sb('technologies',{select:'name',order:'name.asc'});
     const opts=techs.map(t=>`<option value="${t.name}">`).join('');
-    const dl=document.getElementById('tech-list-edit');
-    if(dl) dl.innerHTML=opts;
+    ['tech-list-edit','tech-list-bon'].forEach(id=>{
+      const dl=document.getElementById(id);
+      if(dl) dl.innerHTML=opts;
+    });
   } catch(e){}
+}
+
+// ── ADD BONUS ──
+async function addBonus() {
+  const bonText=document.getElementById('bon-text').value.trim();
+  const tech=document.getElementById('bon-tech').value.trim();
+  const maxLvl=document.getElementById('bon-maxlevel').value.trim();
+  if(!bonText||!tech){showSt('bon-status','Bonus-Text und Tech sind Pflichtfelder.','error');return;}
+  // Check duplicate
+  const exists=allBonuses.find(b=>b.bonus_text.toLowerCase()===bonText.toLowerCase()&&b.tech_name.toLowerCase()===tech.toLowerCase());
+  if(exists){showSt('bon-status','Dieser Bonus ist bereits eingetragen.','error');return;}
+  try {
+    const body={tech_name:tech, bonus_text:bonText};
+    if(maxLvl&&!isNaN(maxLvl)) body.max_level=parseInt(maxLvl);
+    const r=await sb('tech_bonuses',{method:'POST',body});
+    allBonuses.push(r[0]);
+    showSt('bon-status','✓ Bonus hinzugefügt!','success');
+    document.getElementById('bon-text').value='';
+    document.getElementById('bon-tech').value='';
+    document.getElementById('bon-maxlevel').value='';
+    renderModList();
+    if(document.getElementById('view-tree').classList.contains('active')) loadTree();
+  } catch(e){showSt('bon-status','✗ Fehler: '+e.message,'error');}
 }
 
 // ── LOAD MODULE LIST ──
@@ -751,44 +827,67 @@ async function loadModList() {
 function renderModList() {
   const typeFilter=document.getElementById('mod-filter-type').value;
   const searchFilter=document.getElementById('mod-filter-search').value.toLowerCase();
-  const tbody=document.getElementById('mod-list-body');
-  let rows=[];
-  allModules.forEach(m=>{
-    if(typeFilter&&m.module_type!==typeFilter) return;
-    if(searchFilter&&!m.module_name.toLowerCase().includes(searchFilter)&&!m.tech_name.toLowerCase().includes(searchFilter)) return;
-    const type=m.module_type||'bauteil';
-    const icon=TYPE_ICONS[type]||'⚙';
-    rows.push(`<tr>
+
+  // Filter modules
+  let mods=allModules.filter(m=>{
+    if(typeFilter&&m.module_type!==typeFilter) return false;
+    if(searchFilter&&!m.module_name.toLowerCase().includes(searchFilter)&&!m.tech_name.toLowerCase().includes(searchFilter)) return false;
+    return true;
+  });
+  // Sort: unbestimmt first, then alphabetical by type label, then by name
+  mods.sort((a,b)=>{
+    const ta=a.module_type||'unbestimmt', tb=b.module_type||'unbestimmt';
+    if(ta==='unbestimmt'&&tb!=='unbestimmt') return -1;
+    if(tb==='unbestimmt'&&ta!=='unbestimmt') return 1;
+    const la=TYPE_LABELS[ta]||ta, lb=TYPE_LABELS[tb]||tb;
+    if(la!==lb) return la.localeCompare(lb,'de');
+    return a.module_name.localeCompare(b.module_name,'de');
+  });
+
+  // Filter bonuses
+  let bons=(!typeFilter||typeFilter==='bonus')?allBonuses.filter(b=>{
+    if(searchFilter&&!b.bonus_text.toLowerCase().includes(searchFilter)&&!b.tech_name.toLowerCase().includes(searchFilter)) return false;
+    return true;
+  }):[];
+  bons.sort((a,b)=>a.bonus_text.localeCompare(b.bonus_text,'de'));
+
+  // Render modules (left column)
+  const modRows = mods.map(m=>{
+    const type=m.module_type||'unbestimmt';
+    const icon=TYPE_ICONS[type]||'❓';
+    const isUnbestimmt=type==='unbestimmt';
+    return `<tr${isUnbestimmt?' style="background:rgba(255,215,0,0.04);"':''}>
       <td>
-        <select class="type-select" onchange="changeType(${m.id},this.value)" style="background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:0.72rem;padding:2px 4px;cursor:pointer;">
-          ${MOD_TYPES.map(t=>`<option value="${t}" ${t===type?'selected':''}>${TYPE_LABELS[t]}</option>`).join('')}
+        <select class="type-select" onchange="changeType(${m.id},this.value)" style="background:var(--bg);border:1px solid ${isUnbestimmt?'rgba(255,215,0,0.4)':'var(--border)'};color:${isUnbestimmt?'#ffd700':'var(--text)'};font-size:0.72rem;padding:2px 4px;cursor:pointer;max-width:110px;">
+          ${MOD_TYPES.map(t=>`<option value="${t}" ${t===type?'selected':''}>${TYPE_ICONS[t]} ${TYPE_LABELS[t]}</option>`).join('')}
         </select>
       </td>
       <td>${m.module_name}</td>
-      <td style="color:var(--text-dim)">${m.tech_name}</td>
-      <td style="color:var(--text-dim)">${m.unlock_level}</td>
+      <td style="color:var(--text-dim);font-size:0.75rem">${m.tech_name}</td>
+      <td style="color:var(--text-dim);font-size:0.75rem">${m.unlock_level}</td>
       <td><div class="td-actions">
         <button class="btn btn-sm btn-warn" onclick="openEditMod(${m.id},'module')">✏</button>
         <button class="btn btn-sm btn-danger" onclick="deleteMod(${m.id},'module')">🗑</button>
       </div></td>
-    </tr>`);
+    </tr>`;
   });
-  if(!typeFilter||typeFilter==='bonus') {
-    allBonuses.forEach(b=>{
-      if(searchFilter&&!b.bonus_text.toLowerCase().includes(searchFilter)&&!b.tech_name.toLowerCase().includes(searchFilter)) return;
-      rows.push(`<tr>
-        <td><span class="type-chip bonus">⚡ Bonus</span></td>
-        <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${b.bonus_text}">${b.bonus_text}</td>
-        <td style="color:var(--text-dim)">${b.tech_name}</td>
-        <td style="color:var(--text-dim)">–</td>
-        <td><div class="td-actions">
-          <button class="btn btn-sm btn-warn" onclick="openEditMod(${b.id},'bonus')">✏</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteMod(${b.id},'bonus')">🗑</button>
-        </div></td>
-      </tr>`);
-    });
-  }
-  tbody.innerHTML=rows.length?rows.join(''):`<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:20px;">Keine Einträge.</td></tr>`;
+
+  // Render bonuses (right column)
+  const bonRows = bons.map(b=>`<tr>
+    <td style="color:var(--text-dim);font-size:0.75rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${b.bonus_text}">${b.bonus_text}</td>
+    <td style="color:var(--text-dim);font-size:0.75rem">${b.tech_name}</td>
+    <td style="color:var(--text-dim);font-size:0.75rem">${b.max_level||'–'}</td>
+    <td><div class="td-actions">
+      <button class="btn btn-sm btn-warn" onclick="openEditMod(${b.id},'bonus')">✏</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteMod(${b.id},'bonus')">🗑</button>
+    </div></td>
+  </tr>`);
+
+  // Two-column layout using a flex wrapper
+  const modTbody=document.getElementById('mod-list-body');
+  const bonTbody=document.getElementById('bon-list-body');
+  if(modTbody) modTbody.innerHTML=modRows.length?modRows.join(''):`<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:16px;">Keine Einträge.</td></tr>`;
+  if(bonTbody) bonTbody.innerHTML=bonRows.length?bonRows.join(''):`<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:16px;">Keine Einträge.</td></tr>`;
 }
 
 // Cycle through types by clicking the type chip
@@ -802,59 +901,64 @@ async function changeType(id, newType) {
 }
 
 // ── SHARED MODULE LINE PARSER ──
-// Parses the multi-line format the game uses:
-//   Folgende Module wurden...
-//   ModulName            <- name line (possibly repeated)
-//   ModulName            <- duplicate (skip)
-//   TechName Level X     <- tech+level line
+// Handles a "Folgende Module" block which may contain MULTIPLE modules:
+//   GMT1 LIGHT           <- name
+//   GMT1 LIGHT           <- duplicate (skip)
+//   Technik Level 1      <- tech + level  → first module done
+//   Transporter Class I  <- name of second module
+//   Transporter Class I  <- duplicate
+//   Technik Level 12     <- tech + level  → second module done
 //
-// Also handles old single-line: "ModulName TechName Level X"
-// Returns array of {kind:'module'|'bonus', name, tech, level, bonusText}
+// techNames: array of known tech names (longest first for best matching)
+// lines: full lines array
+// startIdx: first line AFTER "Folgende Module..."
+// Returns {parsed: [...], nextIdx}
 function parseModuleLines(lines, techNames, startIdx) {
-  // startIdx = line AFTER "Folgende Module..."
   const result = [];
   let i = startIdx;
+  let nameLines = [];
 
-  // Read name lines until we find the "TechName Level X" line
-  const nameLines = [];
   while(i < lines.length) {
     const l = lines[i].trim();
-    // Skip empty, nav, standalone *
-    if(!l || l==='Verbessern' || l==='Suchen' || l==='*') { i++; break; }
-    // Tech header = end of module section
-    if(l.match(/^.+\s*-\s*Level:\s*\d+/i)) break;
-    // Bonus line = end
-    if(l.startsWith('* ')) break;
-    // Folgende = new section (shouldn't happen mid-parse)
-    if(l.startsWith('Folgende Module')) break;
 
-    // Is this line a "TechName Level X" line?
-    const mTechLevel = l.match(/^(.+?)\s+Level\s+(\d+)$/i);
-    if(mTechLevel) {
-      // The part before "Level X" should be a known tech name (or close)
-      const possibleTech = mTechLevel[1].trim();
-      const level = parseInt(mTechLevel[2]);
-      // Check if it's a known tech name
+    // Hard stops: end of module block
+    if(!l || l==='Verbessern' || l==='Suchen' || l==='*') { i++; break; }
+    if(l.match(/^.+\s*-\s*Level:\s*\d+/i)) break;   // tech header
+    if(l.startsWith('* ')) break;                     // bonus line
+    if(l.startsWith('Folgende Module')) break;        // new section
+
+    // Is this a "TechName Level X" line?
+    const mTL = l.match(/^(.+?)\s+Level\s+(\d+)$/i);
+    if(mTL) {
+      const possibleTech = mTL[1].trim();
+      const level = parseInt(mTL[2]);
       const knownTech = techNames.find(tn => tn.toLowerCase() === possibleTech.toLowerCase());
+
       if(knownTech || nameLines.length > 0) {
-        // We have our module name(s) in nameLines, tech here
-        // Deduplicate nameLines: if same line appears twice, take once
-        let modName = '';
+        // Commit current module
+        let modName;
         if(nameLines.length === 0) {
-          // Old single-line format fell through — use possibleTech as-is
+          // Single-line fallback
           modName = possibleTech;
-          result.push({kind:'module', name:modName, tech:knownTech||possibleTech, level});
         } else {
-          // Deduplicate: ["Nemesis Cruiser","Nemesis Cruiser"] → "Nemesis Cruiser"
-          const unique = [...new Set(nameLines.map(n=>n.toLowerCase()))];
-          modName = unique.map(u => nameLines.find(n=>n.toLowerCase()===u)).join(' ');
-          result.push({kind:'module', name:modName.trim(), tech:knownTech||possibleTech, level});
+          // Deduplicate repeated name lines
+          const seen = new Set();
+          const unique = [];
+          for(const n of nameLines) {
+            const lc = n.toLowerCase();
+            if(!seen.has(lc)) { seen.add(lc); unique.push(n); }
+          }
+          modName = unique.join(' ').trim();
         }
+        if(modName) result.push({kind:'module', name:modName, tech:knownTech||possibleTech, level});
+        // Reset for next module in same block
+        nameLines = [];
         i++;
-        break;
+        continue; // keep reading — there may be more modules
       }
     }
-    // Otherwise it's a name line
+
+    // Name line (or unknown line — treat as name)
     nameLines.push(l);
     i++;
   }
@@ -909,7 +1013,7 @@ async function parseAndAddModules() {
         if(!p.tech){
           // No tech found — still save with placeholder, user can edit
         }
-        const r=await sb('tech_modules',{method:'POST',body:{tech_name:p.tech||'?',module_name:p.name,unlock_level:p.level,module_type:'bauteil'}});
+        const r=await sb('tech_modules',{method:'POST',body:{tech_name:p.tech||'?',module_name:p.name,unlock_level:p.level,module_type:'unbestimmt'}});
         allModules.push(r[0]);
         existingMods.add(key);
         added++;
@@ -945,7 +1049,7 @@ function openEditMod(id, kind) {
     document.getElementById('edit-level').value=m.unlock_level;
     // Set type selector
     const editTypeSelect=document.getElementById('edit-type-select');
-    if(editTypeSelect) editTypeSelect.value=m.module_type||'chassi';
+    if(editTypeSelect) editTypeSelect.value=m.module_type||'unbestimmt';
     document.getElementById('edit-type-row').style.display='block';
     document.getElementById('edit-bonus-wrap').style.display='none';
     document.getElementById('edit-name-wrap').style.display='block';
@@ -958,6 +1062,7 @@ function openEditMod(id, kind) {
     document.getElementById('edit-tech').value=b.tech_name;
     document.getElementById('edit-level').value='';
     document.getElementById('edit-bonus-text').value=b.bonus_text;
+    document.getElementById('edit-bon-maxlevel').value=b.max_level||'';
     document.getElementById('edit-type-row').style.display='none';
     document.getElementById('edit-bonus-wrap').style.display='block';
     document.getElementById('edit-name-wrap').style.display='none';
@@ -983,9 +1088,13 @@ async function saveModEntry() {
       if(idx>=0){allModules[idx].module_name=name;allModules[idx].tech_name=tech;allModules[idx].unlock_level=parseInt(level);allModules[idx].module_type=modType;}
     } else {
       const bonusText=document.getElementById('edit-bonus-text').value.trim();
-      await sbFilter('tech_bonuses','id',editingModId,{method:'PATCH',body:{tech_name:tech,bonus_text:bonusText}});
+      const maxLvl=document.getElementById('edit-bon-maxlevel').value.trim();
+      const bonBody={tech_name:tech,bonus_text:bonusText};
+      if(maxLvl&&!isNaN(maxLvl)) bonBody.max_level=parseInt(maxLvl);
+      else bonBody.max_level=null;
+      await sbFilter('tech_bonuses','id',editingModId,{method:'PATCH',body:bonBody});
       const idx=allBonuses.findIndex(x=>x.id===editingModId);
-      if(idx>=0){allBonuses[idx].tech_name=tech;allBonuses[idx].bonus_text=bonusText;}
+      if(idx>=0){allBonuses[idx].tech_name=tech;allBonuses[idx].bonus_text=bonusText;allBonuses[idx].max_level=bonBody.max_level;}
     }
     document.getElementById('edit-modal').classList.remove('show');
     renderModList();
@@ -1132,7 +1241,7 @@ async function confirmImport(){
           const techForMod=m.tech||t.name;
           const key=`${m.name}|${techForMod}|${m.level}`;
           if(modSet.has(key)) continue;
-          await sb('tech_modules',{method:'POST',body:{tech_name:techForMod,module_name:m.name,unlock_level:m.level,module_type:'chassi'}}).catch(()=>{});
+          await sb('tech_modules',{method:'POST',body:{tech_name:techForMod,module_name:m.name,unlock_level:m.level,module_type:'unbestimmt'}}).catch(()=>{});
           modSet.add(key);modsAdded++;
         }
       }
