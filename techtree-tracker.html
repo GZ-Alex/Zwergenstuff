@@ -272,7 +272,7 @@
         <button class="btn" style="font-size:0.5rem;padding:3px 8px;" onclick="clearChangelog()">Leeren</button>
       </div>
       <div id="changelog-list" style="display:flex;flex-direction:column;gap:6px;">
-        <div style="color:var(--text-dim);font-size:0.75rem;font-style:italic;">Noch keine Änderungen in dieser Sitzung.</div>
+        <div style="color:var(--text-dim);font-size:0.75rem;font-style:italic;">Verlauf wird geladen…</div>
       </div>
     </div>
   </div>
@@ -527,21 +527,33 @@ ALTER TABLE tech_bonuses ADD COLUMN IF NOT EXISTS max_level INTEGER;
 -- Falls tech_modules bereits existiert, Spalte ergänzen:
 ALTER TABLE tech_modules ADD COLUMN IF NOT EXISTS module_type TEXT DEFAULT 'bauteil';
 
+-- Verlauf (persistent, max. 50 Einträge)
+CREATE TABLE IF NOT EXISTS tech_changelog (
+  id BIGSERIAL PRIMARY KEY,
+  entry_type TEXT NOT NULL,
+  entry_html TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- RLS
-ALTER TABLE technologies ENABLE ROW LEVEL SECURITY;
-ALTER TABLE tech_modules  ENABLE ROW LEVEL SECURITY;
-ALTER TABLE tech_bonuses  ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "r" ON technologies FOR SELECT USING (true);
-CREATE POLICY "i" ON technologies FOR INSERT WITH CHECK (true);
-CREATE POLICY "u" ON technologies FOR UPDATE USING (true);
-CREATE POLICY "r" ON tech_modules FOR SELECT USING (true);
-CREATE POLICY "i" ON tech_modules FOR INSERT WITH CHECK (true);
-CREATE POLICY "u" ON tech_modules FOR UPDATE USING (true);
-CREATE POLICY "d" ON tech_modules FOR DELETE  USING (true);
-CREATE POLICY "r" ON tech_bonuses FOR SELECT USING (true);
-CREATE POLICY "i" ON tech_bonuses FOR INSERT WITH CHECK (true);
-CREATE POLICY "u" ON tech_bonuses FOR UPDATE USING (true);
-CREATE POLICY "d" ON tech_bonuses FOR DELETE  USING (true);</div>
+ALTER TABLE technologies   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tech_modules   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tech_bonuses   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tech_changelog ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "r" ON technologies   FOR SELECT USING (true);
+CREATE POLICY "i" ON technologies   FOR INSERT WITH CHECK (true);
+CREATE POLICY "u" ON technologies   FOR UPDATE USING (true);
+CREATE POLICY "r" ON tech_modules   FOR SELECT USING (true);
+CREATE POLICY "i" ON tech_modules   FOR INSERT WITH CHECK (true);
+CREATE POLICY "u" ON tech_modules   FOR UPDATE USING (true);
+CREATE POLICY "d" ON tech_modules   FOR DELETE  USING (true);
+CREATE POLICY "r" ON tech_bonuses   FOR SELECT USING (true);
+CREATE POLICY "i" ON tech_bonuses   FOR INSERT WITH CHECK (true);
+CREATE POLICY "u" ON tech_bonuses   FOR UPDATE USING (true);
+CREATE POLICY "d" ON tech_bonuses   FOR DELETE  USING (true);
+CREATE POLICY "r" ON tech_changelog FOR SELECT USING (true);
+CREATE POLICY "i" ON tech_changelog FOR INSERT WITH CHECK (true);
+CREATE POLICY "d" ON tech_changelog FOR DELETE  USING (true);</div>
     <div class="modal-actions">
       <button class="btn" onclick="document.getElementById('setup-modal').classList.remove('show')">Schließen</button>
     </div>
@@ -1078,6 +1090,7 @@ async function parseAndAddModules() {
         allModules.push(r[0]);
         existingMods.add(key);
         added++;
+        await addChangelog('modul',`📦 <strong>Modul</strong> <span class="cl-highlight">${p.name}</span> <span style="color:var(--text-dim)">in ${p.tech||'?'} (Level ${p.level})</span>`);
       } else {
         const key=`${p.bonusText}|${p.tech}`;
         if(existingBons.has(key)){skipped++;continue;}
@@ -1085,6 +1098,7 @@ async function parseAndAddModules() {
         allBonuses.push(r[0]);
         existingBons.add(key);
         added++;
+        await addChangelog('bonus',`⚡ <strong>Bonus</strong> in <span class="cl-highlight">${p.tech||'?'}</span><br><span style="color:var(--text-dim);font-size:0.7rem;">${p.bonusText}</span>`);
       }
     }catch(e){errors++;}
   }
@@ -1367,30 +1381,52 @@ async function manualAdd(){
   }catch(e){showSt('manual-status','✗ Fehler: '+e.message,'error');}
 }
 
-// ── CHANGELOG ──
-const changelogEntries=[];
-function addChangelog(type, html) {
-  const now=new Date();
-  const time=now.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
-  changelogEntries.unshift({type,html,time});
-  renderChangelog();
+// ── CHANGELOG (Supabase, persistent, max 50) ──
+async function addChangelog(type, html) {
+  try {
+    await sb('tech_changelog', {method:'POST', body:{entry_type:type, entry_html:html}});
+    // Keep max 50: delete oldest excess
+    const all = await sb('tech_changelog', {select:'id', order:'created_at.asc'});
+    if (all.length > 50) {
+      const excess = all.slice(0, all.length - 50);
+      for (const row of excess) await sbFilter('tech_changelog','id',row.id,{method:'DELETE'});
+    }
+  } catch(e) { console.warn('Changelog write failed:', e.message); }
+  await loadChangelog();
 }
-function renderChangelog() {
-  const el=document.getElementById('changelog-list');
-  if(!el) return;
-  if(!changelogEntries.length){
-    el.innerHTML='<div style="color:var(--text-dim);font-size:0.75rem;font-style:italic;">Noch keine Änderungen in dieser Sitzung.</div>';
+
+async function loadChangelog() {
+  try {
+    const rows = await sb('tech_changelog', {select:'*', order:'created_at.desc'});
+    renderChangelog(rows);
+  } catch(e) { console.warn('Changelog load failed:', e.message); }
+}
+
+function renderChangelog(rows) {
+  const el = document.getElementById('changelog-list');
+  if (!el) return;
+  if (!rows || !rows.length) {
+    el.innerHTML = '<div style="color:var(--text-dim);font-size:0.75rem;font-style:italic;">Noch keine Änderungen vorhanden.</div>';
     return;
   }
-  el.innerHTML=changelogEntries.map(e=>`
-    <div class="cl-entry cl-${e.type}">
-      ${e.html}
-      <span class="cl-time">${e.time}</span>
-    </div>`).join('');
+  el.innerHTML = rows.map(e => {
+    const d    = new Date(e.created_at);
+    const day  = d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    const time = d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+    return `<div class="cl-entry cl-${e.entry_type}">
+      ${e.entry_html}
+      <span class="cl-time">${day} · ${time}</span>
+    </div>`;
+  }).join('');
 }
-function clearChangelog() {
-  changelogEntries.length=0;
-  renderChangelog();
+
+async function clearChangelog() {
+  if (!confirm('Verlauf wirklich leeren?')) return;
+  try {
+    const all = await sb('tech_changelog', {select:'id'});
+    for (const row of all) await sbFilter('tech_changelog','id',row.id,{method:'DELETE'});
+    renderChangelog([]);
+  } catch(e) { alert('Fehler: ' + e.message); }
 }
 
 // ── HELPERS ──
@@ -1403,6 +1439,7 @@ function showSetupModal(){document.getElementById('setup-modal').classList.add('
 });
 
 loadTree();
+loadChangelog();
 </script>
 </body>
 </html>
