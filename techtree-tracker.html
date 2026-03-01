@@ -304,10 +304,15 @@ WINCOM Laserkanone Psychologie Level 1
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <select id="mod-filter-type" style="padding:4px 8px;font-size:0.75rem;width:auto;" onchange="renderModList()">
               <option value="">Alle Typen</option>
-              <option value="bauteil">Bauteil</option>
-              <option value="chassis">Chassis</option>
+              <option value="chassi">Chassi</option>
+              <option value="p-waffe">P-Waffe</option>
+              <option value="s-waffe">S-Waffe</option>
+              <option value="schild">Schild</option>
+              <option value="panzerung">Panzerung</option>
               <option value="antrieb">Antrieb</option>
-              <option value="defense">Defense</option>
+              <option value="ausruestung">Ausrüstung</option>
+              <option value="spezial">Spezial</option>
+              <option value="d-turm">D-Turm</option>
               <option value="bonus">Bonus</option>
             </select>
             <input type="text" id="mod-filter-search" placeholder="Suchen…" style="padding:4px 8px;font-size:0.75rem;width:150px;" oninput="renderModList()">
@@ -374,11 +379,19 @@ WINCOM Laserkanone Psychologie Level 1
   <div class="modal">
     <h3 id="edit-modal-title">Eintrag bearbeiten</h3>
     <!-- Type selector (only for modules) -->
-    <div id="edit-type-row" style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
-      <button class="type-btn edit-type-btn active" data-type="bauteil"  onclick="setEditType(this)">⚙ Bauteil</button>
-      <button class="type-btn edit-type-btn"        data-type="chassis"  onclick="setEditType(this)">🚀 Chassis</button>
-      <button class="type-btn edit-type-btn"        data-type="antrieb"  onclick="setEditType(this)">🔥 Antrieb</button>
-      <button class="type-btn edit-type-btn"        data-type="defense"  onclick="setEditType(this)">🛡 Defense</button>
+    <div id="edit-type-row" style="margin-bottom:14px;">
+      <label style="font-family:'Orbitron',monospace;font-size:0.58rem;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:5px;">Typ</label>
+      <select id="edit-type-select" style="background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Exo 2',sans-serif;font-size:0.88rem;padding:7px 12px;width:100%;">
+        <option value="chassi">🚀 Chassi</option>
+        <option value="p-waffe">🔫 P-Waffe</option>
+        <option value="s-waffe">⚔ S-Waffe</option>
+        <option value="schild">🔵 Schild</option>
+        <option value="panzerung">🛡 Panzerung</option>
+        <option value="antrieb">🔥 Antrieb</option>
+        <option value="ausruestung">🎒 Ausrüstung</option>
+        <option value="spezial">✨ Spezial</option>
+        <option value="d-turm">🗼 D-Turm</option>
+      </select>
     </div>
     <div id="edit-name-wrap" class="form-group" style="margin-bottom:14px;">
       <label>Name</label>
@@ -463,8 +476,9 @@ const RASSEN = new Set(['mensch','magumer','wegoner','jamozoid','morricaner','mo
 const CLASS_COLORS = { warlord:'#ff4444', trader:'#44ff88', freelancer:'#4488ff' };
 const NODE_COLOR = '#00d4ff'; // all branch nodes same
 const BRANCHES = ['psychologie','informatik','politik','naturkunde','historik','mathematik','technik'];
-const TYPE_ICONS = { chassis:'🚀', bauteil:'⚙', bonus:'⚡', defense:'🛡', antrieb:'🔥' };
-const TYPE_LABELS = { chassis:'Chassis', bauteil:'Bauteil', bonus:'Bonus', defense:'Defense', antrieb:'Antrieb' };
+const TYPE_ICONS  = { 'chassi':'🚀','p-waffe':'🔫','s-waffe':'⚔','schild':'🔵','panzerung':'🛡','antrieb':'🔥','ausruestung':'🎒','spezial':'✨','d-turm':'🗼','bonus':'⚡' };
+const TYPE_LABELS = { 'chassi':'Chassi','p-waffe':'P-Waffe','s-waffe':'S-Waffe','schild':'Schild','panzerung':'Panzerung','antrieb':'Antrieb','ausruestung':'Ausrüstung','spezial':'Spezial','d-turm':'D-Turm','bonus':'Bonus' };
+const MOD_TYPES   = ['chassi','p-waffe','s-waffe','schild','panzerung','antrieb','ausruestung','spezial','d-turm'];
 
 // ── STATE ──
 let allTechs=[], allModules=[], allBonuses=[];
@@ -687,7 +701,7 @@ function buildNode(node, ancestorIsLast, matchSet) {
         const typeIcon=TYPE_ICONS[m.module_type]||'⚙';
         const typeClass=`type-icon-${m.module_type||'bauteil'}`;
         const i=document.createElement('div'); i.className='mod-item';
-        i.innerHTML=`<span class="${typeClass}">${typeIcon}</span><span class="mod-name">${m.module_name}</span><span class="mod-lvl">ab Level ${m.unlock_level}</span>`;
+        i.innerHTML=`<span class="${typeClass}">${typeIcon}</span><span class="mod-name">${m.module_name}</span><span class="mod-lvl">Level ${m.unlock_level}</span>`;
         bl.appendChild(i);
       });
       det.appendChild(bl);
@@ -745,7 +759,11 @@ function renderModList() {
     const type=m.module_type||'bauteil';
     const icon=TYPE_ICONS[type]||'⚙';
     rows.push(`<tr>
-      <td><span class="type-chip ${type}" style="cursor:pointer;" onclick="cycleType(${m.id},'${type}')" title="Klicken zum Ändern">${icon} ${TYPE_LABELS[type]||type}</span></td>
+      <td>
+        <select class="type-select" onchange="changeType(${m.id},this.value)" style="background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:0.72rem;padding:2px 4px;cursor:pointer;">
+          ${MOD_TYPES.map(t=>`<option value="${t}" ${t===type?'selected':''}>${TYPE_LABELS[t]}</option>`).join('')}
+        </select>
+      </td>
       <td>${m.module_name}</td>
       <td style="color:var(--text-dim)">${m.tech_name}</td>
       <td style="color:var(--text-dim)">${m.unlock_level}</td>
@@ -774,16 +792,74 @@ function renderModList() {
 }
 
 // Cycle through types by clicking the type chip
-const TYPE_CYCLE = ['bauteil','chassis','antrieb','defense'];
-async function cycleType(id, currentType) {
-  const idx=TYPE_CYCLE.indexOf(currentType);
-  const nextType=TYPE_CYCLE[(idx+1)%TYPE_CYCLE.length];
+// TYPE_CYCLE replaced by MOD_TYPES
+async function changeType(id, newType) {
   try {
-    await sbFilter('tech_modules','id',id,{method:'PATCH',body:{module_type:nextType}});
+    await sbFilter('tech_modules','id',id,{method:'PATCH',body:{module_type:newType}});
     const m=allModules.find(x=>x.id===id);
-    if(m) m.module_type=nextType;
-    renderModList();
+    if(m) m.module_type=newType;
   } catch(e){alert('Fehler: '+e.message);}
+}
+
+// ── SHARED MODULE LINE PARSER ──
+// Parses the multi-line format the game uses:
+//   Folgende Module wurden...
+//   ModulName            <- name line (possibly repeated)
+//   ModulName            <- duplicate (skip)
+//   TechName Level X     <- tech+level line
+//
+// Also handles old single-line: "ModulName TechName Level X"
+// Returns array of {kind:'module'|'bonus', name, tech, level, bonusText}
+function parseModuleLines(lines, techNames, startIdx) {
+  // startIdx = line AFTER "Folgende Module..."
+  const result = [];
+  let i = startIdx;
+
+  // Read name lines until we find the "TechName Level X" line
+  const nameLines = [];
+  while(i < lines.length) {
+    const l = lines[i].trim();
+    // Skip empty, nav, standalone *
+    if(!l || l==='Verbessern' || l==='Suchen' || l==='*') { i++; break; }
+    // Tech header = end of module section
+    if(l.match(/^.+\s*-\s*Level:\s*\d+/i)) break;
+    // Bonus line = end
+    if(l.startsWith('* ')) break;
+    // Folgende = new section (shouldn't happen mid-parse)
+    if(l.startsWith('Folgende Module')) break;
+
+    // Is this line a "TechName Level X" line?
+    const mTechLevel = l.match(/^(.+?)\s+Level\s+(\d+)$/i);
+    if(mTechLevel) {
+      // The part before "Level X" should be a known tech name (or close)
+      const possibleTech = mTechLevel[1].trim();
+      const level = parseInt(mTechLevel[2]);
+      // Check if it's a known tech name
+      const knownTech = techNames.find(tn => tn.toLowerCase() === possibleTech.toLowerCase());
+      if(knownTech || nameLines.length > 0) {
+        // We have our module name(s) in nameLines, tech here
+        // Deduplicate nameLines: if same line appears twice, take once
+        let modName = '';
+        if(nameLines.length === 0) {
+          // Old single-line format fell through — use possibleTech as-is
+          modName = possibleTech;
+          result.push({kind:'module', name:modName, tech:knownTech||possibleTech, level});
+        } else {
+          // Deduplicate: ["Nemesis Cruiser","Nemesis Cruiser"] → "Nemesis Cruiser"
+          const unique = [...new Set(nameLines.map(n=>n.toLowerCase()))];
+          modName = unique.map(u => nameLines.find(n=>n.toLowerCase()===u)).join(' ');
+          result.push({kind:'module', name:modName.trim(), tech:knownTech||possibleTech, level});
+        }
+        i++;
+        break;
+      }
+    }
+    // Otherwise it's a name line
+    nameLines.push(l);
+    i++;
+  }
+
+  return {parsed: result, nextIdx: i};
 }
 
 // ── PASTE PARSER FOR MODULES/BONUSES ──
@@ -794,89 +870,28 @@ async function parseAndAddModules() {
   // Load known tech names for matching
   let techNames=[];
   try { techNames=(await sb('technologies',{select:'name'})).map(t=>t.name); } catch(e){}
-  // Sort by length desc so longer names match first
   techNames.sort((a,b)=>b.length-a.length);
 
-  const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
-  const parsed=[]; // {kind:'module'|'bonus', name, tech, level, bonusText}
-  let inModuleSection=false;
+  const lines=text.split('\n').map(l=>l.trim());
+  const parsed=[];
 
-  for(let i=0;i<lines.length;i++){
+  for(let i=0;i<lines.length;){
     const line=lines[i];
-    if(line==='Verbessern'||line==='Suchen'||line==='*') continue;
+    if(!line||line==='Verbessern'||line==='Suchen'||line==='*'){i++;continue;}
 
     if(line.startsWith('Folgende Module')){
-      inModuleSection=true;
+      const res=parseModuleLines(lines, techNames, i+1);
+      parsed.push(...res.parsed);
+      i=res.nextIdx;
       continue;
     }
 
     if(line.startsWith('* ')&&line.length>2){
-      // Bonus line — try to figure out tech from context
-      // We'll leave tech blank and the user can set it via edit
-      parsed.push({kind:'bonus', bonusText:line.slice(2).trim(), tech:'', level:0});
-      inModuleSection=false;
-      continue;
+      parsed.push({kind:'bonus', bonusText:line.slice(2).trim(), tech:'?', level:0});
+      i++;continue;
     }
 
-    if(inModuleSection){
-      // Module line: "[possible duplicate prefix] [ModuleName] [TechName] Level [X]"
-      // Format: everything ends with "TechName Level X"
-      // TechName is a known tech name — find longest match at the end before "Level X"
-      const mLevel=line.match(/\s+Level\s+(\d+)$/i);
-      if(mLevel){
-        const level=parseInt(mLevel[1]);
-        const withoutLevel=line.slice(0,line.length-mLevel[0].length).trim();
-        // Try to find a known tech name at end of withoutLevel
-        let foundTech=null, moduleName=null;
-        for(const tn of techNames){
-          const tnLower=tn.toLowerCase();
-          const wl=withoutLevel.toLowerCase();
-          if(wl.endsWith(tnLower)){
-            foundTech=tn;
-            moduleName=withoutLevel.slice(0,withoutLevel.length-tn.length).trim();
-            break;
-          }
-        }
-        if(!foundTech){
-          // fallback: last word before "Level X" might be part of tech name — skip
-          // just take the whole thing as module name
-          moduleName=withoutLevel;
-        }
-
-        // Fix duplicate prefix: game sometimes repeats the module name
-        // e.g. "WINCOM Laserkanone WINCOM Laserkanone Psychologie Level 1"
-        // After stripping tech, we have "WINCOM Laserkanone WINCOM Laserkanone"
-        // Detect and remove repeated prefix
-        if(moduleName){
-          const half=Math.floor(moduleName.length/2);
-          const firstHalf=moduleName.slice(0,half).trim();
-          const secondHalf=moduleName.slice(half).trim();
-          // Check if the string is a repetition with space in middle
-          if(firstHalf&&secondHalf&&secondHalf.toLowerCase().startsWith(firstHalf.toLowerCase())){
-            moduleName=secondHalf;
-          } else {
-            // More robust: split by spaces and check if first N words == last N words
-            const words=moduleName.split(/\s+/);
-            const wlen=words.length;
-            if(wlen>=2&&wlen%2===0){
-              const half2=wlen/2;
-              const fh=words.slice(0,half2).join(' ').toLowerCase();
-              const sh=words.slice(half2).join(' ').toLowerCase();
-              if(fh===sh) moduleName=words.slice(half2).join(' ');
-            }
-          }
-        }
-
-        if(moduleName&&moduleName.trim()){
-          parsed.push({kind:'module', name:moduleName.trim(), tech:foundTech||'', level});
-        }
-      }
-      inModuleSection=false; // only one module line per section
-      continue;
-    }
-
-    // If line looks like a tech header, reset module section flag
-    if(line.match(/^.+\s*-\s*Level:\s*\d+/)) inModuleSection=false;
+    i++;
   }
 
   if(!parsed.length){showSt('mod-status','Keine Module oder Boni erkannt.','error');return;}
@@ -929,8 +944,9 @@ function openEditMod(id, kind) {
     document.getElementById('edit-tech').value=m.tech_name;
     document.getElementById('edit-level').value=m.unlock_level;
     // Set type selector
-    document.querySelectorAll('.edit-type-btn').forEach(b=>b.classList.toggle('active',b.dataset.type===(m.module_type||'bauteil')));
-    document.getElementById('edit-type-row').style.display='flex';
+    const editTypeSelect=document.getElementById('edit-type-select');
+    if(editTypeSelect) editTypeSelect.value=m.module_type||'chassi';
+    document.getElementById('edit-type-row').style.display='block';
     document.getElementById('edit-bonus-wrap').style.display='none';
     document.getElementById('edit-name-wrap').style.display='block';
     document.getElementById('edit-level-wrap').style.display='block';
@@ -961,8 +977,7 @@ async function saveModEntry() {
     if(editingModKind==='module'){
       const name=document.getElementById('edit-name').value.trim();
       const level=document.getElementById('edit-level').value.trim();
-      const activeTypeBtn=document.querySelector('.edit-type-btn.active');
-      const modType=activeTypeBtn?activeTypeBtn.dataset.type:'bauteil';
+      const modType=document.getElementById('edit-type-select')?.value||'chassi';
       await sbFilter('tech_modules','id',editingModId,{method:'PATCH',body:{module_name:name,tech_name:tech,unlock_level:parseInt(level),module_type:modType}});
       const idx=allModules.findIndex(x=>x.id===editingModId);
       if(idx>=0){allModules[idx].module_name=name;allModules[idx].tech_name=tech;allModules[idx].unlock_level=parseInt(level);allModules[idx].module_type=modType;}
@@ -998,24 +1013,33 @@ async function deleteMod(id, kind) {
   } catch(e){alert('Fehler: '+e.message);}
 }
 
-// ── PARSER (only structure, no modules/bonuses) ──
+// ── TECHTREE PARSER — also captures modules and bonuses ──
 function parseTechText(text){
-  const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
+  const lines=text.split('\n').map(l=>l.trim());
   const techs=[];let cur=null;let i=0;
   while(i<lines.length){
     const line=lines[i];
-    if(line==='Verbessern'||line==='Suchen'||line==='*'){i++;continue;}
-    // Skip module/bonus lines silently
+    if(!line||line==='Verbessern'||line==='Suchen'||line==='*'){i++;continue;}
+    // Module section — capture using shared parser (techNames loaded later during save)
     if(cur&&line.startsWith('Folgende Module')){
+      // Collect raw lines for later parsing (stored as raw on cur)
+      if(!cur._rawModLines) cur._rawModLines=[];
       i++;
       while(i<lines.length){
         const ml=lines[i].trim();
-        if(ml==='*'||ml==='Verbessern'||ml==='Suchen'||ml.match(/^.+\s*-\s*Level:\s*\d+/)) break;
+        if(!ml||ml==='Verbessern'||ml==='Suchen'||ml==='*'||ml.match(/^.+\s*-\s*Level:\s*\d+/i)) break;
+        if(ml.startsWith('Folgende Module')){break;}
+        cur._rawModLines.push(ml);
         i++;
       }
       continue;
     }
-    if(cur&&line.startsWith('* ')&&line.length>2){i++;continue;} // skip bonus lines
+    // Bonus line — capture on cur
+    if(cur&&line.startsWith('* ')&&line.length>2){
+      if(!cur._rawBonuses) cur._rawBonuses=[];
+      cur._rawBonuses.push(line.slice(2).trim());
+      i++;continue;
+    }
 
     // Rassen-Tech: "Name - Level: X - rassenname-Tech"
     const mH=line.match(/^(.+?)\s*-\s*Level:\s*(\d+)(?:\s*-\s*(.+?)-Tech)?$/i);
@@ -1059,8 +1083,13 @@ async function parseAndImport(){
     const isNew=!existSet.has(t.name);
     const isRasse=RASSEN.has(t.tech_class);
     const cc=t.tech_class?(isRasse?'#ffd700':(CLASS_COLORS[t.tech_class]||NODE_COLOR)):NODE_COLOR;
+    const modCount=(t._rawModLines||[]).filter(l=>l&&/Level\s+\d+$/i.test(l)).length;
+    const bonCount=(t._rawBonuses||[]).length;
     html+=`<span style="color:${cc};${!isNew?'opacity:0.35':''};">${t.name}</span>`;
-    html+=` <span style="color:var(--text-dim);font-size:0.7rem;">[${t.branch||'⚠ kein Zweig'}${t.tech_class?' · '+t.tech_class:''}${t.parent_name?' ← '+t.parent_name:''}${!isNew?' · bereits vorhanden':''}]</span><br>`;
+    let extraInfo=`[${t.branch||'⚠ kein Zweig'}${t.tech_class?' · '+t.tech_class:''}${t.parent_name?' ← '+t.parent_name:''}${!isNew?' · vorhanden':''}]`;
+    if(modCount) extraInfo+=` 📦${modCount}`;
+    if(bonCount)  extraInfo+=` ⚡${bonCount}`;
+    html+=` <span style="color:var(--text-dim);font-size:0.7rem;">${extraInfo}</span><br>`;
   });
   document.getElementById('preview-content').innerHTML=html;
   document.getElementById('import-preview').style.display='block';
@@ -1074,13 +1103,52 @@ async function confirmImport(){
   try{
     const existing=await sb('technologies',{select:'name'});
     const existSet=new Set(existing.map(e=>e.name));
-    let added=0,skipped=0;
+    // All tech names (including ones we're about to add) for module parsing
+    const allTechNames=[...existSet,...parsedImport.map(t=>t.name)];
+    allTechNames.sort((a,b)=>b.length-a.length);
+
+    // Existing modules to avoid duplicates
+    const existingMods=await sb('tech_modules',{select:'module_name,tech_name,unlock_level'}).catch(()=>[]);
+    const existingBons=await sb('tech_bonuses',{select:'bonus_text,tech_name'}).catch(()=>[]);
+    const modSet=new Set(existingMods.map(m=>`${m.module_name}|${m.tech_name}|${m.unlock_level}`));
+    const bonSet=new Set(existingBons.map(b=>`${b.bonus_text}|${b.tech_name}`));
+
+    let added=0,skipped=0,modsAdded=0;
     for(const t of parsedImport){
-      if(existSet.has(t.name)||!t.branch){skipped++;continue;}
-      await sb('technologies',{method:'POST',body:{name:t.name,branch:t.branch,parent_name:t.parent_name||null,found_in_parent_level:t.found_in_parent_level||null,description:t.description||null,tech_class:t.tech_class||null}});
-      existSet.add(t.name);added++;
+      if(!t.branch){skipped++;continue;}
+      if(!existSet.has(t.name)){
+        await sb('technologies',{method:'POST',body:{name:t.name,branch:t.branch,parent_name:t.parent_name||null,found_in_parent_level:t.found_in_parent_level||null,description:t.description||null,tech_class:t.tech_class||null}});
+        existSet.add(t.name);added++;
+      } else {
+        skipped++;
+      }
+
+      // Save modules from this tech (even if tech was skipped as duplicate)
+      if(t._rawModLines&&t._rawModLines.length){
+        const res=parseModuleLines(t._rawModLines.concat(['']), allTechNames, 0);
+        for(const m of res.parsed){
+          if(!m.name) continue;
+          // Use current tech name as fallback if tech not found
+          const techForMod=m.tech||t.name;
+          const key=`${m.name}|${techForMod}|${m.level}`;
+          if(modSet.has(key)) continue;
+          await sb('tech_modules',{method:'POST',body:{tech_name:techForMod,module_name:m.name,unlock_level:m.level,module_type:'chassi'}}).catch(()=>{});
+          modSet.add(key);modsAdded++;
+        }
+      }
+      // Save bonuses
+      if(t._rawBonuses){
+        for(const bonText of t._rawBonuses){
+          const key=`${bonText}|${t.name}`;
+          if(bonSet.has(key)) continue;
+          await sb('tech_bonuses',{method:'POST',body:{tech_name:t.name,bonus_text:bonText}}).catch(()=>{});
+          bonSet.add(key);
+        }
+      }
     }
-    showSt('import-status',`✓ ${added} hinzugefügt, ${skipped} übersprungen.`,'success');
+    let msg=`✓ ${added} Techs hinzugefügt, ${skipped} übersprungen`;
+    if(modsAdded) msg+=`, ${modsAdded} Module erkannt`;
+    showSt('import-status',msg,'success');
     document.getElementById('import-preview').style.display='none';
     document.getElementById('import-text').value='';
     parsedImport=null;
