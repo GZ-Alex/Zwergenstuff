@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Allianz Techtree</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Exo+2:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #060a12;
+    --bg2: #0c1220;
+    --bg3: #111927;
+    --border: #1e3050;
+    --accent: #00d4ff;
+    --accent2: #0088cc;
+    --text: #c8dff0;
+    --text-dim: #5a7a9a;
+    --warlord: #ff4444;
+    --trader: #44ff88;
+    --freelancer: #4488ff;
+    --normal: #00d4ff;
+    --gold: #ffd700;
+
+    --psych: #a855f7;
+    --info: #3b82f6;
+    --politik: #ef4444;
+    --natur: #22c55e;
+    --historik: #f59e0b;
+    --mathe: #06b6d4;
+    --technik: #f97316;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    position: relative;
+    z-index: 10;
+    padding: 20px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #0a1525 0%, transparent 100%);
+  }
+
+  .logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(0,212,255,0.5);
+    letter-spacing: 3px;
+  }
+
+  .logo span { color: var(--text-dim); font-weight: 400; }
+
+  .header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  /* Tabs */
+  .tabs {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    gap: 2px;
+    padding: 16px 30px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab {
+    padding: 10px 24px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-bottom: none;
+    background: transparent;
+    color: var(--text-dim);
+    transition: all 0.2s;
+    text-transform: uppercase;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+
+  .tab:hover { color: var(--accent); border-color: var(--border); }
+  .tab.active {
+    background: var(--bg2);
+    color: var(--accent);
+    border-color: var(--border);
+    box-shadow: 0 -2px 0 var(--accent);
+  }
+
+  /* Main content */
+  .content {
+    position: relative;
+    z-index: 5;
+    padding: 24px 30px;
+  }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* Buttons */
+  .btn {
+    padding: 9px 20px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    border: 1px solid var(--accent2);
+    background: rgba(0,212,255,0.08);
+    color: var(--accent);
+    transition: all 0.2s;
+    text-transform: uppercase;
+    clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+  }
+
+  .btn:hover {
+    background: rgba(0,212,255,0.18);
+    box-shadow: 0 0 15px rgba(0,212,255,0.3);
+  }
+
+  .btn.btn-primary {
+    background: rgba(0,212,255,0.15);
+    border-color: var(--accent);
+  }
+
+  .btn.btn-danger {
+    border-color: #ff4444;
+    color: #ff4444;
+    background: rgba(255,68,68,0.08);
+  }
+
+  /* Import Section */
+  .import-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .import-box h2 {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    color: var(--accent);
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+
+  textarea {
+    width: 100%;
+    height: 200px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.85rem;
+    padding: 12px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  textarea:focus { border-color: var(--accent2); }
+
+  input[type="text"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.9rem;
+    padding: 8px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  input[type="text"]:focus { border-color: var(--accent2); }
+
+  /* Status */
+  .status-msg {
+    padding: 10px 16px;
+    border-left: 3px solid var(--accent);
+    background: rgba(0,212,255,0.05);
+    font-size: 0.85rem;
+    margin-top: 12px;
+    display: none;
+  }
+
+  .status-msg.error { border-color: #ff4444; background: rgba(255,68,68,0.05); color: #ff8888; }
+  .status-msg.success { border-color: var(--trader); background: rgba(68,255,136,0.05); color: var(--trader); }
+  .status-msg.show { display: block; }
+
+  /* Branch selector */
+  .branch-selector {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .branch-btn {
+    padding: 8px 16px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    border: 1px solid;
+    background: transparent;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .branch-btn[data-branch="psychologie"] { border-color: var(--psych); color: var(--psych); }
+  .branch-btn[data-branch="informatik"] { border-color: var(--info); color: var(--info); }
+  .branch-btn[data-branch="politik"] { border-color: var(--politik); color: var(--politik); }
+  .branch-btn[data-branch="naturkunde"] { border-color: var(--natur); color: var(--natur); }
+  .branch-btn[data-branch="historik"] { border-color: var(--historik); color: var(--historik); }
+  .branch-btn[data-branch="mathematik"] { border-color: var(--mathe); color: var(--mathe); }
+  .branch-btn[data-branch="technik"] { border-color: var(--technik); color: var(--technik); }
+
+  .branch-btn.active,
+  .branch-btn:hover {
+    background: rgba(255,255,255,0.08);
+    box-shadow: 0 0 12px rgba(255,255,255,0.1);
+  }
+
+  /* Tree view */
+  #tree-container {
+    width: 100%;
+    min-height: 600px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  #tree-svg {
+    width: 100%;
+    min-height: 600px;
+  }
+
+  /* Node styles */
+  .node-card {
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .node-rect {
+    rx: 2;
+    ry: 2;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+  }
+
+  /* Tooltip */
+  .tooltip {
+    position: fixed;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 14px 18px;
+    max-width: 320px;
+    pointer-events: none;
+    z-index: 1000;
+    display: none;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+  }
+
+  .tooltip.show { display: block; }
+
+  .tooltip-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .tooltip-found {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    font-style: italic;
+  }
+
+  .tooltip-desc {
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: var(--text);
+    margin-bottom: 10px;
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+  }
+
+  .tooltip-section-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .tooltip-module {
+    font-size: 0.75rem;
+    padding: 2px 0;
+    color: var(--gold);
+  }
+
+  .tooltip-bonus {
+    font-size: 0.75rem;
+    padding: 2px 0;
+    color: var(--trader);
+  }
+
+  /* Class badge */
+  .class-badge {
+    display: inline-block;
+    padding: 1px 8px;
+    font-size: 0.65rem;
+    font-family: 'Orbitron', monospace;
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+
+  .class-badge.warlord { background: rgba(255,68,68,0.2); color: var(--warlord); border: 1px solid var(--warlord); }
+  .class-badge.trader { background: rgba(68,255,136,0.2); color: var(--trader); border: 1px solid var(--trader); }
+  .class-badge.freelancer { background: rgba(68,136,255,0.2); color: var(--freelancer); border: 1px solid var(--freelancer); }
+
+  /* Manual add form */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    display: block;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+
+  select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.9rem;
+    padding: 8px 14px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  select:focus { border-color: var(--accent2); }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 20px;
+    padding: 14px 20px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stat-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .sep { width: 1px; background: var(--border); }
+
+  /* Loading */
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    font-family: 'Orbitron', monospace;
+    color: var(--text-dim);
+    letter-spacing: 3px;
+    font-size: 0.8rem;
+  }
+
+  .loading::after {
+    content: '...';
+    animation: dots 1.5s infinite;
+  }
+
+  @keyframes dots {
+    0%, 33% { content: '.'; }
+    34%, 66% { content: '..'; }
+    67%, 100% { content: '...'; }
+  }
+
+  /* Scrollable controls */
+  .tree-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .search-input-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .search-input-wrap input {
+    padding-left: 32px;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    pointer-events: none;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 500;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.show { display: flex; }
+
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 28px;
+    width: 90%;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+  }
+
+  .modal h3 {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.9rem;
+    color: var(--accent);
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* SQL instructions box */
+  .sql-box {
+    background: #000;
+    border: 1px solid var(--border);
+    padding: 16px;
+    font-family: monospace;
+    font-size: 0.78rem;
+    color: #88ff88;
+    white-space: pre-wrap;
+    overflow-x: auto;
+    margin: 16px 0;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .info-box {
+    background: rgba(0,212,255,0.05);
+    border: 1px solid rgba(0,212,255,0.2);
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: var(--text-dim);
+  }
+
+  .info-box strong { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">ALLIANCE <span>//</span> TECHTREE</div>
+  <div class="header-actions">
+    <button class="btn btn-primary" onclick="showSetupModal()">⚙ DB Setup</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('tree')">Baumansicht</button>
+  <button class="tab" onclick="switchTab('import')">Techtree Importieren</button>
+  <button class="tab" onclick="switchTab('manual')">Manuell Hinzufügen</button>
+</div>
+
+<div class="content">
+
+  <!-- TREE VIEW -->
+  <div class="view active" id="view-tree">
+    <div class="stats-bar" id="stats-bar">
+      <div class="stat"><div class="stat-value" id="stat-techs">-</div><div class="stat-label">Technologien</div></div>
+      <div class="sep"></div>
+      <div class="stat"><div class="stat-value" id="stat-modules">-</div><div class="stat-label">Module</div></div>
+      <div class="sep"></div>
+      <div class="stat"><div class="stat-value" id="stat-warlord" style="color:var(--warlord)">-</div><div class="stat-label">Warlord</div></div>
+      <div class="sep"></div>
+      <div class="stat"><div class="stat-value" id="stat-trader" style="color:var(--trader)">-</div><div class="stat-label">Trader</div></div>
+      <div class="sep"></div>
+      <div class="stat"><div class="stat-value" id="stat-freelancer" style="color:var(--freelancer)">-</div><div class="stat-label">Freelancer</div></div>
+    </div>
+
+    <div class="tree-controls">
+      <div class="branch-selector" id="branch-selector">
+        <button class="branch-btn active" data-branch="all" onclick="selectBranch('all', this)" style="border-color:var(--accent);color:var(--accent)">ALLE</button>
+        <button class="branch-btn" data-branch="psychologie" onclick="selectBranch('psychologie', this)">Psychologie</button>
+        <button class="branch-btn" data-branch="informatik" onclick="selectBranch('informatik', this)">Informatik</button>
+        <button class="branch-btn" data-branch="politik" onclick="selectBranch('politik', this)">Politik</button>
+        <button class="branch-btn" data-branch="naturkunde" onclick="selectBranch('naturkunde', this)">Naturkunde</button>
+        <button class="branch-btn" data-branch="historik" onclick="selectBranch('historik', this)">Historik</button>
+        <button class="branch-btn" data-branch="mathematik" onclick="selectBranch('mathematik', this)">Mathematik</button>
+        <button class="branch-btn" data-branch="technik" onclick="selectBranch('technik', this)">Technik</button>
+      </div>
+      <div class="search-input-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Technologie suchen..." oninput="filterTree(this.value)">
+      </div>
+      <button class="btn" onclick="loadTree()">↻ Neu laden</button>
+    </div>
+
+    <div id="tree-container">
+      <div class="loading" id="tree-loading">Lade Techtree</div>
+      <svg id="tree-svg" style="display:none"></svg>
+    </div>
+  </div>
+
+  <!-- IMPORT VIEW -->
+  <div class="view" id="view-import">
+    <div class="info-box">
+      <strong>Anleitung:</strong> Kopiere deinen kompletten Techtree aus dem Spiel und füge ihn unten ein. Das Tool erkennt automatisch alle Technologien, Module und Boni. Neue Technologien werden hinzugefügt, bereits vorhandene werden übersprungen (keine Duplikate).
+    </div>
+
+    <div class="import-box">
+      <h2>📋 Roher Techtree einfügen</h2>
+      <textarea id="import-text" placeholder="Psychologie - Level: 8
+Es hat Sie schon immer interessiert, wieso soziale Wesen so ticken wie sie ticken...
+Folgende Module wurden durch dieses Technologielevel bereits freigeschalten:
+WINCOM Laserkanone Psychologie Level 1
+* 
+Verbessern
+Suchen
+Motivationspsychologie - Level: 8
+Gefunden in Psychologie Level 6
+..."></textarea>
+      <div style="display:flex; gap:10px; margin-top:12px; align-items:center;">
+        <button class="btn btn-primary" onclick="parseAndImport()">▶ Importieren & Analysieren</button>
+        <button class="btn" onclick="document.getElementById('import-text').value=''">Leeren</button>
+        <span id="import-count" style="color:var(--text-dim); font-size:0.8rem;"></span>
+      </div>
+      <div class="status-msg" id="import-status"></div>
+    </div>
+
+    <div id="import-preview" style="display:none;">
+      <div class="import-box">
+        <h2>🔍 Vorschau (was erkannt wurde)</h2>
+        <div id="preview-content" style="font-size:0.82rem; line-height:1.8; max-height:300px; overflow-y:auto;"></div>
+        <div style="display:flex; gap:10px; margin-top:16px;">
+          <button class="btn btn-primary" onclick="confirmImport()">✓ Bestätigen & Speichern</button>
+          <button class="btn btn-danger" onclick="cancelImport()">✗ Abbrechen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MANUAL VIEW -->
+  <div class="view" id="view-manual">
+    <div class="info-box">
+      <strong>Manuell hinzufügen:</strong> Einzelne Technologien direkt eingeben.
+    </div>
+
+    <div class="import-box">
+      <h2>➕ Neue Technologie</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Name der Technologie *</label>
+          <input type="text" id="m-name" placeholder="z.B. Motivationspsychologie">
+        </div>
+        <div class="form-group">
+          <label>Hauptzweig *</label>
+          <select id="m-branch">
+            <option value="">-- Wählen --</option>
+            <option value="psychologie">Psychologie</option>
+            <option value="informatik">Informatik</option>
+            <option value="politik">Politik</option>
+            <option value="naturkunde">Naturkunde</option>
+            <option value="historik">Historik</option>
+            <option value="mathematik">Mathematik</option>
+            <option value="technik">Technik</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Übergeordnete Tech (Parent)</label>
+          <input type="text" id="m-parent" placeholder="z.B. Psychologie (leer = Haupttech)">
+        </div>
+        <div class="form-group">
+          <label>Gefunden in Parent Level</label>
+          <input type="text" id="m-parent-level" placeholder="z.B. 6">
+        </div>
+        <div class="form-group">
+          <label>Klasse</label>
+          <select id="m-class">
+            <option value="">Normal</option>
+            <option value="warlord">Warlord</option>
+            <option value="trader">Trader</option>
+            <option value="freelancer">Freelancer</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>Beschreibung</label>
+        <textarea id="m-desc" style="height:80px;" placeholder="Beschreibungstext der Technologie..."></textarea>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>Module (eine pro Zeile: "Modulname Level X")</label>
+        <textarea id="m-modules" style="height:70px;" placeholder="WINCOM Laserkanone Level 1&#10;Ladebucht S - Militär Version Level 5"></textarea>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>Boni/Effekte (eine pro Zeile)</label>
+        <textarea id="m-bonuses" style="height:60px;" placeholder="Erhöht Zielen von Schiffen um 7.5 % pro Level dieser Technologie"></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="manualAdd()">➕ Hinzufügen</button>
+      <div class="status-msg" id="manual-status"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Tooltip -->
+<div class="tooltip" id="tooltip"></div>
+
+<!-- Setup Modal -->
+<div class="modal-overlay" id="setup-modal">
+  <div class="modal">
+    <h3>⚙ Datenbank Setup</h3>
+    <p style="font-size:0.82rem; color:var(--text-dim); margin-bottom:16px;">
+      Führe dieses SQL in deinem Supabase SQL-Editor aus um die Tabellen zu erstellen:
+    </p>
+    <div class="sql-box" id="sql-content"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeSetupModal()">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://dcwtykbujgilyluvyjal.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_UrMDrWlA1E7gJSY7by3qRw_8mNZXht-';
+
+const BRANCH_COLORS = {
+  psychologie: '#a855f7',
+  informatik: '#3b82f6',
+  politik: '#ef4444',
+  naturkunde: '#22c55e',
+  historik: '#f59e0b',
+  mathematik: '#06b6d4',
+  technik: '#f97316'
+};
+
+const CLASS_COLORS = {
+  warlord: '#ff4444',
+  trader: '#44ff88',
+  freelancer: '#4488ff',
+  null: null,
+  '': null
+};
+
+async function supabase(table, options = {}) {
+  let url = `${SUPABASE_URL}/rest/v1/${table}`;
+  const params = new URLSearchParams();
+  if (options.select) params.set('select', options.select);
+  if (options.filter) {
+    for (const [k, v] of Object.entries(options.filter)) {
+      params.set(k, v);
+    }
+  }
+  if (options.order) params.set('order', options.order);
+  if ([...params].length) url += '?' + params.toString();
+
+  const res = await fetch(url, {
+    method: options.method || 'GET',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': options.upsert ? 'resolution=ignore-duplicates' : 'return=representation'
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `HTTP ${res.status}`);
+  }
+  if (res.status === 204) return [];
+  return res.json();
+}
+
+// ========== STATE ==========
+let allTechs = [];
+let allModules = [];
+let allBonuses = [];
+let parsedImportData = null;
+let currentBranch = 'all';
+let searchQuery = '';
+
+// ========== TABS ==========
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['tree','import','manual'][i] === tab);
+  });
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(`view-${tab}`).classList.add('active');
+  if (tab === 'tree') loadTree();
+}
+
+// ========== LOAD TREE ==========
+async function loadTree() {
+  document.getElementById('tree-loading').style.display = 'flex';
+  document.getElementById('tree-svg').style.display = 'none';
+
+  try {
+    allTechs = await supabase('technologies', { select: '*', order: 'name.asc' });
+    allModules = await supabase('tech_modules', { select: '*' });
+    allBonuses = await supabase('tech_bonuses', { select: '*' });
+
+    updateStats();
+    renderTree();
+  } catch(e) {
+    document.getElementById('tree-loading').textContent = 'Fehler: ' + e.message;
+    console.error(e);
+  }
+}
+
+function updateStats() {
+  document.getElementById('stat-techs').textContent = allTechs.length;
+  document.getElementById('stat-modules').textContent = allModules.length;
+  document.getElementById('stat-warlord').textContent = allTechs.filter(t => t.tech_class === 'warlord').length;
+  document.getElementById('stat-trader').textContent = allTechs.filter(t => t.tech_class === 'trader').length;
+  document.getElementById('stat-freelancer').textContent = allTechs.filter(t => t.tech_class === 'freelancer').length;
+}
+
+function selectBranch(branch, btn) {
+  currentBranch = branch;
+  document.querySelectorAll('.branch-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTree();
+}
+
+function filterTree(val) {
+  searchQuery = val.toLowerCase();
+  renderTree();
+}
+
+function renderTree() {
+  let techs = allTechs;
+  if (currentBranch !== 'all') techs = techs.filter(t => t.branch === currentBranch);
+  if (searchQuery) {
+    const matched = new Set();
+    techs.forEach(t => {
+      if (t.name.toLowerCase().includes(searchQuery) ||
+          (t.description || '').toLowerCase().includes(searchQuery)) {
+        matched.add(t.name);
+        // also add ancestors
+        let cur = t;
+        while (cur && cur.parent_name) {
+          matched.add(cur.parent_name);
+          cur = techs.find(x => x.name === cur.parent_name);
+        }
+      }
+    });
+    techs = techs.filter(t => matched.has(t.name));
+  }
+
+  if (techs.length === 0) {
+    document.getElementById('tree-loading').style.display = 'flex';
+    document.getElementById('tree-loading').textContent = 'Keine Technologien gefunden';
+    document.getElementById('tree-svg').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('tree-loading').style.display = 'none';
+  document.getElementById('tree-svg').style.display = 'block';
+
+  buildTreeLayout(techs);
+}
+
+function buildTreeLayout(techs) {
+  const svg = document.getElementById('tree-svg');
+  svg.innerHTML = '';
+
+  const NODE_W = 180;
+  const NODE_H = 60;
+  const H_GAP = 220;
+  const V_GAP = 80;
+
+  // Group by branch, build hierarchies per branch
+  const branches = currentBranch === 'all'
+    ? ['psychologie','informatik','politik','naturkunde','historik','mathematik','technik']
+    : [currentBranch];
+
+  let allNodes = [];
+  let allLinks = [];
+  let branchOffsetX = 40;
+
+  branches.forEach(branch => {
+    const branchTechs = techs.filter(t => t.branch === branch);
+    if (branchTechs.length === 0) return;
+
+    const nodeMap = {};
+    branchTechs.forEach(t => nodeMap[t.name] = { ...t, children: [] });
+
+    const roots = [];
+    branchTechs.forEach(t => {
+      if (!t.parent_name || !nodeMap[t.parent_name]) {
+        roots.push(nodeMap[t.name]);
+      } else {
+        nodeMap[t.parent_name].children.push(nodeMap[t.name]);
+      }
+    });
+
+    // Layout: BFS with depth-based x, sibling-based y
+    function layoutTree(root, depth, siblingIdx, siblingTotal, parentY) {
+      root._x = branchOffsetX + depth * H_GAP;
+      const slotH = V_GAP;
+      root._y = parentY + siblingIdx * slotH - ((siblingTotal - 1) * slotH / 2);
+      root.children.forEach((child, i) => layoutTree(child, depth + 1, i, root.children.length, root._y));
+    }
+
+    let yOffset = 40;
+    roots.forEach((root, i) => {
+      layoutTree(root, 0, 0, 1, yOffset + countDescendants(root) * V_GAP / 2);
+      yOffset += (countDescendants(root) + 1) * V_GAP + 40;
+    });
+
+    // Collect all nodes & links
+    function collect(node) {
+      allNodes.push({ ...node, branch });
+      node.children.forEach(child => {
+        allLinks.push({ from: node, to: child, branch });
+        collect(child);
+      });
+    }
+    roots.forEach(r => collect(r));
+
+    // Find max x in this branch to offset next branch
+    const maxX = Math.max(...branchTechs.map(t => nodeMap[t.name]._x || 0));
+    branchOffsetX = maxX + H_GAP + 60;
+  });
+
+  if (allNodes.length === 0) return;
+
+  const maxX = Math.max(...allNodes.map(n => n._x)) + NODE_W + 60;
+  const maxY = Math.max(...allNodes.map(n => n._y)) + NODE_H + 60;
+
+  svg.setAttribute('viewBox', `0 0 ${maxX} ${maxY}`);
+  svg.setAttribute('width', maxX);
+  svg.setAttribute('height', maxY);
+  document.getElementById('tree-container').style.overflowX = 'auto';
+  document.getElementById('tree-container').style.overflowY = 'auto';
+  document.getElementById('tree-container').style.minHeight = Math.min(maxY + 40, 700) + 'px';
+
+  const ns = 'http://www.w3.org/2000/svg';
+
+  // Defs for glow filters
+  const defs = document.createElementNS(ns, 'defs');
+  ['psychologie','informatik','politik','naturkunde','historik','mathematik','technik','warlord','trader','freelancer'].forEach(k => {
+    const filter = document.createElementNS(ns, 'filter');
+    filter.setAttribute('id', `glow-${k}`);
+    const fe = document.createElementNS(ns, 'feDropShadow');
+    const c = BRANCH_COLORS[k] || CLASS_COLORS[k] || '#00d4ff';
+    fe.setAttribute('dx', '0'); fe.setAttribute('dy', '0');
+    fe.setAttribute('stdDeviation', '4');
+    fe.setAttribute('flood-color', c);
+    fe.setAttribute('flood-opacity', '0.6');
+    filter.appendChild(fe);
+    defs.appendChild(filter);
+  });
+  svg.appendChild(defs);
+
+  // Draw links
+  allLinks.forEach(link => {
+    const path = document.createElementNS(ns, 'path');
+    const x1 = link.from._x + NODE_W;
+    const y1 = link.from._y + NODE_H / 2;
+    const x2 = link.to._x;
+    const y2 = link.to._y + NODE_H / 2;
+    const mx = (x1 + x2) / 2;
+    path.setAttribute('d', `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`);
+    path.setAttribute('stroke', BRANCH_COLORS[link.branch] || '#00d4ff');
+    path.setAttribute('stroke-width', '1.5');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('opacity', '0.4');
+    svg.appendChild(path);
+  });
+
+  // Draw nodes
+  allNodes.forEach(node => {
+    const g = document.createElementNS(ns, 'g');
+    g.setAttribute('class', 'node-card');
+    g.setAttribute('transform', `translate(${node._x}, ${node._y})`);
+
+    const techClass = node.tech_class;
+    const branchColor = BRANCH_COLORS[node.branch] || '#00d4ff';
+    const classColor = techClass ? CLASS_COLORS[techClass] : null;
+    const nodeColor = classColor || branchColor;
+    const isHighlighted = searchQuery && node.name.toLowerCase().includes(searchQuery);
+
+    // Background rect
+    const rect = document.createElementNS(ns, 'rect');
+    rect.setAttribute('width', NODE_W);
+    rect.setAttribute('height', NODE_H);
+    rect.setAttribute('fill', '#0c1220');
+    rect.setAttribute('stroke', nodeColor);
+    rect.setAttribute('stroke-width', isHighlighted ? '2.5' : '1');
+    rect.setAttribute('rx', '3');
+    rect.setAttribute('filter', `url(#glow-${techClass || node.branch})`);
+    g.appendChild(rect);
+
+    // Left color bar
+    const bar = document.createElementNS(ns, 'rect');
+    bar.setAttribute('width', '4');
+    bar.setAttribute('height', NODE_H);
+    bar.setAttribute('fill', nodeColor);
+    bar.setAttribute('rx', '2');
+    g.appendChild(bar);
+
+    // Tech name
+    const nameText = document.createElementNS(ns, 'text');
+    nameText.setAttribute('x', '14');
+    nameText.setAttribute('y', '22');
+    nameText.setAttribute('fill', nodeColor);
+    nameText.setAttribute('font-family', 'Orbitron, monospace');
+    nameText.setAttribute('font-size', '9');
+    nameText.setAttribute('font-weight', '600');
+    nameText.textContent = truncate(node.name, 20);
+    g.appendChild(nameText);
+
+    // Modules count or class badge
+    const modules = allModules.filter(m => m.tech_name === node.name);
+    const bonuses = allBonuses.filter(b => b.tech_name === node.name);
+
+    let subLine = '';
+    if (modules.length > 0) subLine += `📦 ${modules.length} Modul${modules.length > 1 ? 'e' : ''}`;
+    if (bonuses.length > 0) subLine += (subLine ? '  ' : '') + `⚡ ${bonuses.length} Bonus`;
+    if (!subLine && techClass) subLine = techClass.toUpperCase();
+
+    if (subLine) {
+      const subText = document.createElementNS(ns, 'text');
+      subText.setAttribute('x', '14');
+      subText.setAttribute('y', '40');
+      subText.setAttribute('fill', '#5a7a9a');
+      subText.setAttribute('font-family', 'Exo 2, sans-serif');
+      subText.setAttribute('font-size', '9');
+      subText.textContent = subLine;
+      g.appendChild(subText);
+    }
+
+    // Class indicator top right
+    if (techClass) {
+      const badge = document.createElementNS(ns, 'text');
+      badge.setAttribute('x', NODE_W - 8);
+      badge.setAttribute('y', '14');
+      badge.setAttribute('fill', classColor);
+      badge.setAttribute('font-family', 'Orbitron, monospace');
+      badge.setAttribute('font-size', '7');
+      badge.setAttribute('text-anchor', 'end');
+      badge.textContent = techClass === 'warlord' ? 'W' : techClass === 'trader' ? 'T' : 'F';
+      g.appendChild(badge);
+    }
+
+    // Children indicator
+    if (node.children && node.children.length > 0) {
+      const arrow = document.createElementNS(ns, 'text');
+      arrow.setAttribute('x', NODE_W - 8);
+      arrow.setAttribute('y', NODE_H - 8);
+      arrow.setAttribute('fill', '#2a4060');
+      arrow.setAttribute('font-size', '10');
+      arrow.setAttribute('text-anchor', 'end');
+      arrow.textContent = `▶ ${node.children.length}`;
+      g.appendChild(arrow);
+    }
+
+    // Tooltip events
+    g.addEventListener('mouseenter', (e) => showTooltip(e, node));
+    g.addEventListener('mouseleave', hideTooltip);
+    g.addEventListener('mousemove', moveTooltip);
+
+    svg.appendChild(g);
+  });
+}
+
+function countDescendants(node) {
+  if (!node.children || node.children.length === 0) return 0;
+  return node.children.reduce((s, c) => s + 1 + countDescendants(c), 0);
+}
+
+function truncate(str, len) {
+  return str.length > len ? str.slice(0, len - 1) + '…' : str;
+}
+
+// ========== TOOLTIP ==========
+function showTooltip(e, node) {
+  const modules = allModules.filter(m => m.tech_name === node.name);
+  const bonuses = allBonuses.filter(b => b.tech_name === node.name);
+  const techClass = node.tech_class;
+  const classColor = techClass ? CLASS_COLORS[techClass] : 'var(--accent)';
+
+  let html = '';
+  if (techClass) {
+    html += `<div class="class-badge ${techClass}">${techClass}</div><br>`;
+  }
+  html += `<div class="tooltip-title" style="color:${classColor || 'var(--accent)'}">${node.name}</div>`;
+  if (node.parent_name) {
+    html += `<div class="tooltip-found">Gefunden in ${node.parent_name} Level ${node.found_in_parent_level || '?'}</div>`;
+  }
+  if (node.description) {
+    html += `<div class="tooltip-desc">${node.description}</div>`;
+  }
+  if (modules.length > 0) {
+    html += `<div class="tooltip-section-title">Freigeschaltete Module</div>`;
+    modules.forEach(m => {
+      html += `<div class="tooltip-module">📦 ${m.module_name} <span style="color:var(--text-dim)">Level ${m.unlock_level}</span></div>`;
+    });
+  }
+  if (bonuses.length > 0) {
+    html += `<div class="tooltip-section-title" style="margin-top:8px">Boni / Effekte</div>`;
+    bonuses.forEach(b => {
+      html += `<div class="tooltip-bonus">⚡ ${b.bonus_text}</div>`;
+    });
+  }
+
+  const tt = document.getElementById('tooltip');
+  tt.innerHTML = html;
+  tt.classList.add('show');
+  moveTooltip(e);
+}
+
+function moveTooltip(e) {
+  const tt = document.getElementById('tooltip');
+  let x = e.clientX + 16;
+  let y = e.clientY + 16;
+  if (x + 340 > window.innerWidth) x = e.clientX - 340;
+  if (y + 300 > window.innerHeight) y = e.clientY - 300;
+  tt.style.left = x + 'px';
+  tt.style.top = y + 'px';
+}
+
+function hideTooltip() {
+  document.getElementById('tooltip').classList.remove('show');
+}
+
+// ========== PARSER ==========
+function parseTechTree(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+  const techs = [];
+  let i = 0;
+  let currentTech = null;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Skip navigation lines
+    if (line === 'Verbessern' || line === 'Suchen' || line === '*') { i++; continue; }
+
+    // Tech header: "Name - Level: X" or "Name - Level: X - warlord-Tech"
+    const techMatch = line.match(/^(.+?)\s*-\s*Level:\s*(\d+)(?:\s*-\s*(warlord|trader|freelancer)-Tech)?$/i);
+    if (techMatch) {
+      currentTech = {
+        name: techMatch[1].trim(),
+        level: parseInt(techMatch[2]),
+        tech_class: techMatch[3] ? techMatch[3].toLowerCase() : null,
+        parent_name: null,
+        found_in_parent_level: null,
+        description: '',
+        branch: null,
+        modules: [],
+        bonuses: []
+      };
+      techs.push(currentTech);
+      i++;
+      continue;
+    }
+
+    if (!currentTech) { i++; continue; }
+
+    // "Gefunden in X Level Y"
+    const foundMatch = line.match(/^Gefunden in (.+?) Level (\d+)$/i);
+    if (foundMatch) {
+      currentTech.parent_name = foundMatch[1].trim();
+      currentTech.found_in_parent_level = parseInt(foundMatch[2]);
+      i++; continue;
+    }
+
+    // Modules section trigger
+    if (line.startsWith('Folgende Module')) {
+      i++;
+      // Parse modules until we hit * or Verbessern or next tech or empty
+      while (i < lines.length) {
+        const ml = lines[i].trim();
+        if (ml === '*' || ml === 'Verbessern' || ml === 'Suchen' || ml.match(/^.+\s*-\s*Level:\s*\d+/)) break;
+        if (ml === 'Folgende Module wurden durch dieses Technologielevel bereits freigeschalten:') { i++; continue; }
+        // Module line: "Module Name TechName Level X"
+        const modMatch = ml.match(/^(.+?)\s+\S+\s+Level\s+(\d+)$/i);
+        if (modMatch) {
+          currentTech.modules.push({ name: modMatch[1].trim(), level: parseInt(modMatch[2]) });
+        } else if (ml) {
+          // try simpler: last word is number, second to last is "Level"
+          const parts = ml.split(/\s+/);
+          if (parts.length >= 2 && !isNaN(parts[parts.length - 1]) && parts[parts.length - 2].toLowerCase() === 'level') {
+            const lvl = parseInt(parts[parts.length - 1]);
+            const modName = parts.slice(0, parts.length - 2).join(' ');
+            currentTech.modules.push({ name: modName, level: lvl });
+          }
+        }
+        i++;
+      }
+      continue;
+    }
+
+    // Bonus line starting with *
+    if (line.startsWith('* ') && line.length > 2) {
+      currentTech.bonuses.push(line.slice(2).trim());
+      i++; continue;
+    }
+
+    // Description (anything else non-empty that doesn't match other patterns)
+    if (line && !line.match(/^(Verbessern|Suchen|\*)$/) && !line.match(/^.+\s*-\s*Level:/)) {
+      currentTech.description += (currentTech.description ? ' ' : '') + line;
+    }
+
+    i++;
+  }
+
+  // Determine branch for each tech
+  const BRANCHES = ['psychologie','informatik','politik','naturkunde','historik','mathematik','technik'];
+  techs.forEach(t => {
+    const nameLower = t.name.toLowerCase();
+    // Check if it's a root tech
+    const rootMatch = BRANCHES.find(b => nameLower === b);
+    if (rootMatch) { t.branch = rootMatch; return; }
+    // Inherit from parent
+    if (t.parent_name) {
+      const parent = techs.find(p => p.name === t.parent_name);
+      if (parent && parent.branch) { t.branch = parent.branch; return; }
+    }
+  });
+
+  // Second pass for branch inheritance (multi-level)
+  for (let pass = 0; pass < 10; pass++) {
+    techs.forEach(t => {
+      if (!t.branch && t.parent_name) {
+        const parent = techs.find(p => p.name === t.parent_name);
+        if (parent && parent.branch) t.branch = parent.branch;
+      }
+    });
+  }
+
+  return techs;
+}
+
+// ========== IMPORT ==========
+async function parseAndImport() {
+  const text = document.getElementById('import-text').value.trim();
+  if (!text) { showStatus('import-status', 'Bitte Text einfügen.', 'error'); return; }
+
+  parsedImportData = parseTechTree(text);
+  if (parsedImportData.length === 0) {
+    showStatus('import-status', 'Keine Technologien erkannt. Überprüfe das Format.', 'error');
+    return;
+  }
+
+  // Show preview
+  const previewEl = document.getElementById('preview-content');
+  let html = `<strong style="color:var(--accent)">${parsedImportData.length} Technologien erkannt:</strong><br><br>`;
+
+  parsedImportData.forEach(t => {
+    const classColor = t.tech_class ? CLASS_COLORS[t.tech_class] : 'var(--accent)';
+    const branchColor = t.branch ? BRANCH_COLORS[t.branch] : '#666';
+    html += `<span style="color:${classColor}">${t.name}</span>`;
+    html += ` <span style="color:var(--text-dim); font-size:0.75rem">[${t.branch || '?'} | Level ${t.level}`;
+    if (t.tech_class) html += ` | ${t.tech_class}`;
+    if (t.parent_name) html += ` | ← ${t.parent_name}`;
+    html += `]`;
+    if (t.modules.length) html += ` 📦${t.modules.length}`;
+    if (t.bonuses.length) html += ` ⚡${t.bonuses.length}`;
+    html += `</span><br>`;
+  });
+
+  previewEl.innerHTML = html;
+  document.getElementById('import-preview').style.display = 'block';
+  document.getElementById('import-count').textContent = `${parsedImportData.length} Techs erkannt`;
+  document.getElementById('import-status').classList.remove('show');
+}
+
+async function confirmImport() {
+  if (!parsedImportData) return;
+
+  showStatus('import-status', 'Speichere...', '');
+  document.getElementById('import-status').classList.add('show');
+
+  try {
+    // Load existing tech names
+    const existing = await supabase('technologies', { select: 'name' });
+    const existingNames = new Set(existing.map(e => e.name));
+
+    let added = 0;
+    let skipped = 0;
+
+    for (const tech of parsedImportData) {
+      if (existingNames.has(tech.name)) { skipped++; continue; }
+      if (!tech.branch) { skipped++; continue; }
+
+      // Insert tech
+      await supabase('technologies', {
+        method: 'POST',
+        body: {
+          name: tech.name,
+          branch: tech.branch,
+          parent_name: tech.parent_name || null,
+          found_in_parent_level: tech.found_in_parent_level || null,
+          description: tech.description || null,
+          tech_class: tech.tech_class || null
+        }
+      });
+
+      // Insert modules
+      for (const m of tech.modules) {
+        await supabase('tech_modules', {
+          method: 'POST',
+          body: { tech_name: tech.name, module_name: m.name, unlock_level: m.level }
+        });
+      }
+
+      // Insert bonuses
+      for (const b of tech.bonuses) {
+        await supabase('tech_bonuses', {
+          method: 'POST',
+          body: { tech_name: tech.name, bonus_text: b }
+        });
+      }
+
+      existingNames.add(tech.name);
+      added++;
+    }
+
+    showStatus('import-status', `✓ ${added} Technologien hinzugefügt, ${skipped} übersprungen (bereits vorhanden oder kein Zweig erkannt).`, 'success');
+    document.getElementById('import-preview').style.display = 'none';
+    document.getElementById('import-text').value = '';
+    parsedImportData = null;
+  } catch(e) {
+    showStatus('import-status', '✗ Fehler: ' + e.message, 'error');
+    console.error(e);
+  }
+}
+
+function cancelImport() {
+  document.getElementById('import-preview').style.display = 'none';
+  parsedImportData = null;
+}
+
+// ========== MANUAL ADD ==========
+async function manualAdd() {
+  const name = document.getElementById('m-name').value.trim();
+  const branch = document.getElementById('m-branch').value;
+  const parent = document.getElementById('m-parent').value.trim();
+  const parentLevel = document.getElementById('m-parent-level').value.trim();
+  const techClass = document.getElementById('m-class').value;
+  const desc = document.getElementById('m-desc').value.trim();
+  const modulesRaw = document.getElementById('m-modules').value.trim();
+  const bonusesRaw = document.getElementById('m-bonuses').value.trim();
+
+  if (!name || !branch) {
+    showStatus('manual-status', 'Name und Hauptzweig sind Pflichtfelder.', 'error');
+    return;
+  }
+
+  try {
+    await supabase('technologies', {
+      method: 'POST',
+      body: {
+        name, branch,
+        parent_name: parent || null,
+        found_in_parent_level: parentLevel ? parseInt(parentLevel) : null,
+        description: desc || null,
+        tech_class: techClass || null
+      }
+    });
+
+    if (modulesRaw) {
+      const lines = modulesRaw.split('\n').filter(l => l.trim());
+      for (const l of lines) {
+        const m = l.trim().match(/^(.+?)\s+Level\s+(\d+)$/i);
+        if (m) {
+          await supabase('tech_modules', {
+            method: 'POST',
+            body: { tech_name: name, module_name: m[1].trim(), unlock_level: parseInt(m[2]) }
+          });
+        }
+      }
+    }
+
+    if (bonusesRaw) {
+      const lines = bonusesRaw.split('\n').filter(l => l.trim());
+      for (const l of lines) {
+        await supabase('tech_bonuses', {
+          method: 'POST',
+          body: { tech_name: name, bonus_text: l.trim() }
+        });
+      }
+    }
+
+    showStatus('manual-status', `✓ "${name}" wurde hinzugefügt!`, 'success');
+    ['m-name','m-parent','m-parent-level','m-desc','m-modules','m-bonuses'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('m-branch').value = '';
+    document.getElementById('m-class').value = '';
+  } catch(e) {
+    showStatus('manual-status', '✗ Fehler: ' + e.message, 'error');
+  }
+}
+
+// ========== SETUP MODAL ==========
+const SQL_SCHEMA = `-- TECHTREE TRACKER: Datenbank Setup
+-- Einmalig im Supabase SQL Editor ausführen
+
+CREATE TABLE IF NOT EXISTS technologies (
+  id BIGSERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  branch TEXT NOT NULL,
+  parent_name TEXT,
+  found_in_parent_level INTEGER,
+  description TEXT,
+  tech_class TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS tech_modules (
+  id BIGSERIAL PRIMARY KEY,
+  tech_name TEXT NOT NULL REFERENCES technologies(name) ON DELETE CASCADE,
+  module_name TEXT NOT NULL,
+  unlock_level INTEGER NOT NULL,
+  module_type TEXT
+);
+
+CREATE TABLE IF NOT EXISTS tech_bonuses (
+  id BIGSERIAL PRIMARY KEY,
+  tech_name TEXT NOT NULL REFERENCES technologies(name) ON DELETE CASCADE,
+  bonus_text TEXT NOT NULL
+);
+
+ALTER TABLE technologies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tech_modules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tech_bonuses ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read" ON technologies FOR SELECT USING (true);
+CREATE POLICY "Public insert" ON technologies FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public update" ON technologies FOR UPDATE USING (true);
+
+CREATE POLICY "Public read" ON tech_modules FOR SELECT USING (true);
+CREATE POLICY "Public insert" ON tech_modules FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public update" ON tech_modules FOR UPDATE USING (true);
+CREATE POLICY "Public delete" ON tech_modules FOR DELETE USING (true);
+
+CREATE POLICY "Public read" ON tech_bonuses FOR SELECT USING (true);
+CREATE POLICY "Public insert" ON tech_bonuses FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public update" ON tech_bonuses FOR UPDATE USING (true);
+CREATE POLICY "Public delete" ON tech_bonuses FOR DELETE USING (true);`;
+
+function showSetupModal() {
+  document.getElementById('sql-content').textContent = SQL_SCHEMA;
+  document.getElementById('setup-modal').classList.add('show');
+}
+
+function closeSetupModal() {
+  document.getElementById('setup-modal').classList.remove('show');
+}
+
+// ========== HELPERS ==========
+function showStatus(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'status-msg show' + (type ? ` ${type}` : '');
+}
+
+// ========== INIT ==========
+loadTree();
+</script>
+</body>
+</html>
