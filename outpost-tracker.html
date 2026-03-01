@@ -158,6 +158,12 @@
 </style>
 </head>
 <body>
+<script>
+  // Redirect to hub if not authenticated this session
+  if (sessionStorage.getItem('alliance_auth') !== '1') {
+    window.location.href = 'index.html';
+  }
+</script>
 
 <div class="container">
   <header>
