@@ -250,6 +250,31 @@
   </div>
 </div>
 
+<!-- MODAL: Bearbeiten -->
+<div class="modal-overlay" id="modalEdit" style="display:none;">
+  <div class="modal">
+    <h3>✏ BEARBEITEN</h3>
+    <div style="display:grid;gap:10px;margin-bottom:16px;">
+      <div>
+        <label style="font-family:'Orbitron',monospace;font-size:10px;color:var(--gray);letter-spacing:0.15em;text-transform:uppercase;display:block;margin-bottom:4px;">Spielername</label>
+        <input type="text" id="editName" placeholder="Spielername...">
+      </div>
+      <div>
+        <label style="font-family:'Orbitron',monospace;font-size:10px;color:var(--gray);letter-spacing:0.15em;text-transform:uppercase;display:block;margin-bottom:4px;">Allianz</label>
+        <input type="text" id="editAlliance" placeholder="~Allianz~">
+      </div>
+      <div>
+        <label style="font-family:'Orbitron',monospace;font-size:10px;color:var(--gray);letter-spacing:0.15em;text-transform:uppercase;display:block;margin-bottom:4px;">Koordinaten</label>
+        <input type="text" id="editCoords" placeholder="123-456-78">
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn" style="border-color:#44ff88;color:#44ff88;" onclick="confirmEdit()">SPEICHERN</button>
+      <button class="btn" onclick="closeModal('modalEdit')">ABBRECHEN</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -418,10 +443,39 @@
     }
   }
 
+  let pendingEditId = null;
+  function editOutpost(id) {
+    const op = outposts.find(o => o.id === id);
+    if (!op) return;
+    pendingEditId = id;
+    document.getElementById('editName').value = op.name || '';
+    document.getElementById('editAlliance').value = op.alliance || '–';
+    document.getElementById('editCoords').value = op.coords || '';
+    document.getElementById('modalEdit').style.display = 'flex';
+    setTimeout(()=>document.getElementById('editName').focus(), 50);
+  }
+  async function confirmEdit() {
+    const name     = document.getElementById('editName').value.trim();
+    const alliance = document.getElementById('editAlliance').value.trim();
+    const coords   = document.getElementById('editCoords').value.trim();
+    if (!name || !coords) { showToast('❌ Name und Koordinaten sind Pflichtfelder.'); return; }
+    setSyncStatus('syncing', '● SPEICHERE...');
+    try {
+      await dbUpdate('outposts', { id: pendingEditId }, { name, alliance: alliance||'–', coords });
+      closeModal('modalEdit');
+      showToast('✓ Außenposten aktualisiert.');
+      await loadData();
+    } catch(e) {
+      showToast('❌ Fehler: ' + e.message);
+      setSyncStatus('error', '● FEHLER');
+    }
+  }
+
   function closeModal(id) {
     document.getElementById(id).style.display = 'none';
     pendingDestroyId = null;
     pendingOnTheWayId = null;
+    pendingEditId = null;
   }
 
   function render() {
@@ -489,6 +543,7 @@
               </label>
             </div>
             ${otw ? `<div class="ontheway-info">🚀 ${escHtml(otw)} · ${formatDate(otwDate)}</div>` : ''}
+            <button onclick="editOutpost('${op.id}')" style="margin-top:6px;font-family:'Orbitron',monospace;font-size:9px;font-weight:600;letter-spacing:0.1em;color:var(--gray);border:1px solid var(--border);background:transparent;padding:4px 10px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.color='#00d4ff';this.style.borderColor='#00d4ff';" onmouseout="this.style.color='var(--gray)';this.style.borderColor='var(--border)';">✏ BEARBEITEN</button>
           </td>
         </tr>
       `;
@@ -557,7 +612,7 @@
   document.getElementById('destroyerInput').addEventListener('keydown', e=>{ if(e.key==='Enter') confirmDestroy(); });
   document.getElementById('onTheWayInput').addEventListener('keydown',  e=>{ if(e.key==='Enter') confirmOnTheWay(); });
 
-  ['modalDestroy','modalOnTheWay'].forEach(id => {
+  ['modalDestroy','modalOnTheWay','modalEdit'].forEach(id => {
     document.getElementById(id).addEventListener('click', e => {
       if (e.target===document.getElementById(id)) closeModal(id);
     });
